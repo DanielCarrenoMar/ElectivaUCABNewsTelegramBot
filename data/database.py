@@ -3,6 +3,7 @@ import os
 from typing import Any, Optional, TypedDict
 
 import psycopg
+import psycopg.errors
 from psycopg import sql
 from psycopg.rows import dict_row
 from dotenv import load_dotenv
@@ -14,10 +15,18 @@ load_dotenv()
 if not os.getenv("DB_URL"):
     raise RuntimeError("Falta variable de entorno DB_URL")
 
-databaseConnection = psycopg.connect(
-    os.getenv("DB_URL"),
-    autocommit=True,
-)
+_databaseConnection = None
+
+def get_db_connection():
+    global _databaseConnection
+    try:
+        if _databaseConnection is None or _databaseConnection.closed:
+            _databaseConnection = psycopg.connect(os.getenv("DB_URL"), autocommit=True)
+        else:
+            _databaseConnection.execute("SELECT 1")
+    except (psycopg.OperationalError, psycopg.errors.OperationalError, Exception):
+        _databaseConnection = psycopg.connect(os.getenv("DB_URL"), autocommit=True)
+    return _databaseConnection
 
 class ChatConfigRow(TypedDict, total=False):
     id: int
@@ -83,7 +92,7 @@ def _fecthChatConfig(chatId: int, cursor: psycopg.cursor) -> Optional[ChatConfig
     return row
 
 def getOrCreateChatConfig(chatId: int) -> ChatConfig:
-    with databaseConnection.cursor(row_factory=dict_row) as cursor:
+    with get_db_connection().cursor(row_factory=dict_row) as cursor:
         row = _fecthChatConfig(chatId, cursor)
 
         if row is None:
@@ -109,7 +118,7 @@ def getOrCreateChatConfig(chatId: int) -> ChatConfig:
                     None,
                 ),
             )
-            databaseConnection.commit()
+            get_db_connection().commit()
             row = _fecthChatConfig(chatId, cursor)
 
             if row is None:
@@ -121,7 +130,7 @@ def getOrCreateChatConfig(chatId: int) -> ChatConfig:
 def updateChatConfig(chatId: int, config: ChatConfig) -> ChatConfig:
     row = chatConfigToRow(chatId, config)
 
-    with databaseConnection.cursor(row_factory=dict_row) as cursor:
+    with get_db_connection().cursor(row_factory=dict_row) as cursor:
         cursor.execute(
             sql.SQL(
                 """
@@ -153,7 +162,7 @@ def updateChatConfig(chatId: int, config: ChatConfig) -> ChatConfig:
                 row["uni_search"],
             ),
         )
-        databaseConnection.commit()
+        get_db_connection().commit()
 
         return _fecthChatConfig(chatId, cursor)
 
@@ -161,7 +170,7 @@ def updateChatConfig(chatId: int, config: ChatConfig) -> ChatConfig:
 def getAllChatConfigs() -> dict[int, ChatConfig]:
     chatConfigs: dict[int, ChatConfig] = {}
 
-    with databaseConnection.cursor(row_factory=dict_row) as cursor:
+    with get_db_connection().cursor(row_factory=dict_row) as cursor:
         cursor.execute(
             sql.SQL(
                 """
