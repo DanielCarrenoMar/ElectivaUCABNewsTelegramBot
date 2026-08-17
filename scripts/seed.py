@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS {table} (
 CREATE_CHAT_CONFIGS_TABLE = """
 CREATE TABLE IF NOT EXISTS chatconfigs (
     id BIGINT PRIMARY KEY,
-    lastrevision DATE,
+    lastrevision DATE DEFAULT CURRENT_DATE,
     is_subscribed BOOLEAN NOT NULL DEFAULT TRUE,
     uni_countries INT REFERENCES countries(id),
     disciplinary_field INT REFERENCES disciplinary_fields(id),
