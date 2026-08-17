@@ -9,7 +9,7 @@ ElectivaUCABNewsTelegramBot/
 ├── scripts/
 │   └── seed.py                    # Creación de tablas y catálogos en PostgreSQL
 ├── src/                           # Código fuente (arquitectura limpia por capas)
-│   ├── app/                       # Capa de aplicación: entrada y orquestación
+│   ├── port/                      # Capa de entrada: bot de Telegram y tareas
 │   │   ├── telegramBot/
 │   │   │   ├── main.py            # Punto de entrada: crea TeleBot, registra comandos
 │   │   │   └── command/           # Comandos del bot
@@ -25,58 +25,76 @@ ElectivaUCABNewsTelegramBot/
 │   │   ├── syncCoursesUseCase.py
 │   │   ├── sendCourseToAllUseCase.py
 │   │   ├── subscribeChatUseCase.py
-│   │   └── unsubscribeChatUseCase.py
+│   │   ├── unsubscribeChatUseCase.py
+│   │   ├── getLastUpdateUseCase.py
+│   │   ├── getUserCountUseCase.py
+│   │   ├── getUserFiltersUseCase.py
+│   │   ├── resetFiltersUseCase.py
+│   │   └── sendFiltersToUserUseCase.py
 │   ├── domain/                    # Capa de dominio: entidades y contratos
 │   │   ├── model/
 │   │   │   ├── courseModel.py
 │   │   │   └── chatConfigModel.py
-│   │   ├── courseRepository.py    # Contrato de origen de cursos (eMOVIES)
-│   │   ├── databaseRepository.py  # Contrato de persistencia (PostgreSQL)
-│   │   └── courseNotifier.py      # Contrato de notificación (Telegram)
-│   └── infraestructure/           # Capa de infraestructura: implementaciones
-│       ├── dto/
-│       │   ├── database/
-│       │   └── emovies/
-│       ├── mapper/
-│       │   └── emovieMapper.py
-│       ├── emoviesCoursesRepositoryImp.py      # Implementa CourseRepository
-│       ├── postgresDatabaseRepositoryImp.py    # Implementa DatabaseRepository
-│       └── telegramCourseNotifier.py           # Implementa CourseNotifier
+│   │   └── repository/            # Contratos (interfaces) por capa
+│   │       ├── courseRepository.py     # Contrato de origen de cursos (eMOVIES/AUSJAL)
+│   │       ├── databaseRepository.py   # Contrato de persistencia (PostgreSQL)
+│   │       └── notifierRepository.py   # Contrato de notificación (Telegram)
+│   ├── infraestructure/           # Capa de infraestructura: implementaciones
+│   │   ├── dbConnection.py        # Conexión PostgreSQL singleton con reintentos
+│   │   ├── dto/                   # Data transfer objects (pydantic)
+│   │   │   ├── database/          #   chatConfigsDto, courseDto, countriesDto,
+│   │   │   │                      #   courseLevelsDto, disciplinaryFieldsDto,
+│   │   │   │                      #   languagesDto, universitiesDto
+│   │   │   └── emovies/           #   emovieApiParamsDto, emovieApiResponseDto,
+│   │   │                          #   emovieswebScraperCourseDto
+│   │   ├── mapper/
+│   │   │   ├── courseDtoMapper.py        # Traduce IDs de catálogo ↔ nombres
+│   │   │   └── emovies/
+│   │   │       ├── emovieMapper.py
+│   │   │       └── emoviesCatalogTranslator.py
+│   │   └── repositoryImp/         # Implementaciones de los contratos
+│   │       ├── emoviesCoursesRepositoryImp.py      # Implementa CourseRepository (eMOVIES)
+│   │       ├── ausjalCoursesRepositoryImp.py       # Implementa CourseRepository (AUSJAL)
+│   │       ├── postgresDatabaseRepositoryImp.py    # Implementa DatabaseRepository
+│   │       └── telegramNotifierRepositoryImp.py    # Implementa notifierRepository
+│   └── config/
+│       └── defaultValuesCatalog.py   # Catálogos por defecto (países, niveles, áreas…)
 ```
 
 ### Reglas de la arquitectura
 
-- `domain/` define contratos (interfaces) sin dependencias externas.
-- `infraestructure/` implementa esos contratos (HTTP, scraping, PostgreSQL).
+- `domain/` define contratos (interfaces) sin dependencias externas. Los contratos viven en `domain/repository/`.
+- `infraestructure/` implementa esos contratos (HTTP, scraping, PostgreSQL) en `infraestructure/repositoryImp/`.
 - `aplication/` contiene los casos de uso que conectan dominio e infraestructura.
-- `app/` es la entrada: bot de Telegram y tareas programadas.
-- Los nombres de carpeta están escritos así en el repo (`aplication`, `infraestructure`) — respetarlos al importar.
+- `port/` es la entrada: bot de Telegram (`port/telegramBot/`) y tareas programadas (`port/task/`).
+- Los nombres de carpeta están escritos así en el repo (`aplication`, `infraestructure`, `repositoryImp`) — respetarlos al importar.
+- La conexión a BD es un singleton con reintentos configurable por env (`dbConnection.py`): `DB_CONNECTION_MAX_RETRIES` y `DB_CONNECTION_RETRY_DELAY_SECONDS`.
 
 ## Base de datos (PostgreSQL)
 
-**ChatConfigs** — una fila por chat de Telegram (PK = `id`).
+**chatconfigs** — una fila por chat de Telegram (PK = `id`).
 
 | Columna | Tipo | Descripción |
 |---|---|---|
 | id | BIGINT (Long int) | PK — ID del chat de Telegram |
 | lastrevision | DATE | Última fecha de revisión de cursos |
 | is_subscribed | BOOLEAN | Indica si el chat recibe notificaciones (default TRUE) |
-| uni_countries | INT | FK → `Countries(id)` |
-| disciplinary_field | INT | FK → `Disciplinary_fields(id)` |
-| course_university | INT | FK → `Universities(id)` |
-| uni_languages | INT | FK → `Languages(id)` |
-| course_levels | INT | FK → `Course_levels(id)` |
+| uni_countries | INT | FK → `countries(id)` |
+| disciplinary_field | INT | FK → `disciplinary_fields(id)` |
+| course_university | INT | FK → `universities(id)` |
+| uni_languages | INT | FK → `languages(id)` |
+| course_levels | INT | FK → `course_levels(id)` |
 | key_word | CHAR(50) | Palabra clave de búsqueda |
 
-**Tablas catálogo** — cada una con dos columnas: `id` (INT/BIGINT, PK) y una columna `CHAR` con el valor:
+**Tablas catálogo** — cada una con dos columnas: `id` (SERIAL, PK) y una columna `CHAR(100) NOT NULL UNIQUE` con el valor:
 
-- `Universities` — universidades
-- `Disciplinary_fields` — áreas disciplinarias
-- `Countries` — países
-- `Languages` — idiomas
-- `Course_levels` — niveles académicos
+- `universities` — universidades
+- `disciplinary_fields` — áreas disciplinarias
+- `countries` — países
+- `languages` — idiomas
+- `course_levels` — niveles académicos
 
-El script `scripts/seed.py` inserta los valores de eMOVIES en `countries`, `course_levels` y `disciplinary_fields`. `universities` y `languages` quedan vacíos hasta que se provean datos.
+El script `scripts/seed.py` inserta los valores en `countries`, `course_levels` y `disciplinary_fields` desde `src/config/defaultValuesCatalog.py` (`catalogValues(catalog)`). `universities` y `languages` quedan vacíos hasta que se provean datos.
 
 **courses_sources** — catálogo de fuentes de cursos:
 
@@ -94,11 +112,11 @@ El script `scripts/seed.py` inserta los valores de eMOVIES en `countries`, `cour
 | external_id | INT | ID del curso en la fuente |
 | title | VARCHAR(255) | Título |
 | url | TEXT | URL del curso |
-| uni_countries | INT | FK → `Countries(id)` |
-| disciplinary_field | INT | FK → `Disciplinary_fields(id)` |
-| course_university | INT | FK → `Universities(id)` |
-| uni_languages | INT | FK → `Languages(id)` |
-| course_levels | INT | FK → `Course_levels(id)` |
+| uni_countries | INT | FK → `countries(id)` |
+| disciplinary_field | INT | FK → `disciplinary_fields(id)` |
+| course_university | INT | FK → `universities(id)` |
+| uni_languages | INT | FK → `languages(id)` |
+| course_levels | INT | FK → `course_levels(id)` |
 | start_class_date | DATE | Inicio de clases |
 | end_class_date | DATE | Fin de clases |
 | start_inscription_date | DATE | Inicio de inscripción |
@@ -108,7 +126,7 @@ El script `scripts/seed.py` inserta los valores de eMOVIES en `countries`, `cour
 | slots | INT | Cupos |
 | modified_date | DATE | Última fecha de modificación (para detectar cursos nuevos) |
 
-**Mapeo de catálogos eMOVIES ↔ BD**: los códigos de catálogo de eMOVIES se traducen a IDs de catálogo de la BD mediante los pares código→valor de `src/infraestructure/mapper/emoviesCatalogData.py` y `EmoviesCatalogTranslator` (que resuelve valor→ID consultando la BD). En la dirección inversa, `courseDtoToCourseModel` traduce los IDs de catálogo de vuelta a nombres cargando mapas ID→nombre desde la BD.
+**Mapeo de catálogos eMOVIES ↔ BD**: los códigos de catálogo de eMOVIES se traducen a IDs de catálogo de la app mediante las equivalencias directas código→ID almacenadas en `EmoviesCatalogTranslator` (en `src/infraestructure/mapper/emovies/emoviesCatalogTranslator.py`), sin nombres intermedios ni consultas a la BD. En la dirección inversa, `courseDtoMapper` traduce los IDs de catálogo de vuelta a nombres cargando mapas ID→nombre consultando la BD (método `_catalogNameMaps` de `PostgresDatabaseRepositoryImp`).
 
 ## Dependencias (requirements.txt)
 
