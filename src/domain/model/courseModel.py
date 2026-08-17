@@ -11,6 +11,7 @@ class EducationLevelEnum(str, Enum):
 class CourseModel(BaseModel):
     title: str
     educationLevel: EducationLevelEnum
+    univercity: str
     url: str
     country: str
     language: str

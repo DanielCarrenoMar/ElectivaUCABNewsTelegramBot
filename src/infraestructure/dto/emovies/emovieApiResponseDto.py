@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel
 
 
@@ -28,15 +28,16 @@ class EmovieApiDataDto(BaseModel):
     uni_countries: Optional[str] = None
     course_university: Optional[str] = None
     uni_languages: Optional[str] = None
-    disciplinary_field: Optional[str] = None
+    disciplinary_field: Optional[Union[str, bool]] = None
     uni_search: Optional[str] = None
     course_levels: Optional[str] = None
-    course_drafts: Optional[str] = None
+    course_drafts: Optional[Union[str, bool]] = None
     course_fields: Optional[bool] = None
     courses: Optional[EmovieApiCoursesDto] = None
     max_num_page: Optional[int] = None
     count: Optional[int] = None
     paged: Optional[int] = None
+    courses_html: str
 
 
 class EmovieApiResponseDto(BaseModel):
