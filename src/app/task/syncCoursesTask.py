@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
 from src.infraestructure.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
-from src.infraestructure.mapper.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
 from src.infraestructure.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 

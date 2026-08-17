@@ -4,7 +4,7 @@ from typing import Optional
 from psycopg import sql
 
 from src.infraestructure.dbConnection import get_db_connection
-from src.infraestructure.mapper.emoviesCatalogData import EMOVIES_CATALOG_MAP
+from infraestructure.mapper.emovies.emoviesCatalogData import EMOVIES_CATALOG_MAP
 
 
 class EmoviesCatalogTranslator:

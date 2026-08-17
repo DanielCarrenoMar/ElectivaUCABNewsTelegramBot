@@ -10,7 +10,7 @@ from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.mapper.courseDtoMapper import courseDtoToCourseModel
-from src.infraestructure.mapper.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
 
 COURSES_COLUMNS = [
     "source_id",

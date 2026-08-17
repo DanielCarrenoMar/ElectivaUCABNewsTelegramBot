@@ -5,7 +5,7 @@ from src.domain.model.courseModel import EducationLevelEnum
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from src.infraestructure.mapper.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
 
 COURSE_URL_BASE = "https://emovies.oui-iohe.org/nuestros-cursos/"
 

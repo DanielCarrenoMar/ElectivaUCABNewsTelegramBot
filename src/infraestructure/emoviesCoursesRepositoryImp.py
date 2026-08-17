@@ -13,8 +13,8 @@ from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiResponseDto,
 )
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from src.infraestructure.mapper.emovieMapper import emovieResponseToCourseDto, parseApiDatetime
-from src.infraestructure.mapper.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from infraestructure.mapper.emovies.emovieMapper import emovieResponseToCourseDto, parseApiDatetime
+from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
 
 class EmoviesCoursesRepositoryImp(CourseRepository):
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
