@@ -61,10 +61,14 @@ ElectivaUCABNewsTelegramBot/
 | psycopg | 3.3.3 | Driver de PostgreSQL v3 (`psycopg.connect`) para persistencia |
 | psycopg-binary | 3.3.3 | Binarios compilados de psycopg (instalación sin compilación) |
 | python-dotenv | 1.2.2 | Carga variables de entorno desde `.env` (`load_dotenv()`, `get_key()`) |
+| pydantic | 2.13.4 | Modelado y validación de DTOs: clases `BaseModel`, parseo/validación de datos y serialización. Import: `from pydantic import BaseModel` |
+| annotated-types | 0.8.0 | Soporte de tipos anotados (`Annotated`) usado por pydantic |
 | certifi | 2026.2.25 | Bundle de certificados CA de Mozilla para verificación SSL (usado por requests) |
 | charset-normalizer | 3.4.6 | Detección y normalización de codificaciones (dependencia de requests) |
 | idna | 3.11 | Soporte de nombres de dominio internacionalizados (dependencia de requests) |
+| pydantic_core | 2.46.4 | Núcleo compilado (Rust) de pydantic v2: validación de alto rendimiento (dependencia de pydantic) |
 | soupsieve | 2.9.2 | Motor de selectores CSS usado internamente por beautifulsoup4 |
+| typing-inspection | 0.4.4 | Inspección de tipos en runtime (dependencia de pydantic) |
 | urllib3 | 2.6.3 | Cliente HTTP de bajo nivel usado por requests |
 | typing_extensions | 4.16.0 | Backports de tipado para versiones antiguas de Python |
 | tzdata | 2025.3 | Base de datos IANA de zonas horarias (requerida en Windows) |
@@ -76,3 +80,4 @@ ElectivaUCABNewsTelegramBot/
 - [psycopg 3](https://www.psycopg.org/psycopg3/docs/) — conexión y operaciones con PostgreSQL
 - [Requests](https://requests.readthedocs.io/) — cliente HTTP
 - [python-dotenv](https://pypi.org/project/python-dotenv/) — variables de entorno.
+- [Pydantic](https://pydantic.dev/) — documentación de modelos `BaseModel`, validación y serialización
