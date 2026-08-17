@@ -60,3 +60,13 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
    ```bash
    .venv\Scripts\python.exe -m src.port.task.syncCoursesTask    
    ```
+
+   Tarea notificar a todos los usuario los nuevos cursos
+   ```bash
+   .venv\Scripts\python.exe -m src.port.task.sendCoursesToSubcriptorsTask    
+   ```
+
+   Ejecutar bucle de bot Telegram
+   ```bash
+   .venv\Scripts\python.exe -m src.port.telegramBot.main   
+   ```
