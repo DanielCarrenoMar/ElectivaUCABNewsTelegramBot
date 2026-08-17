@@ -28,6 +28,29 @@ ElectivaUCABNewsTelegramBot/
 - `app/` es la entrada: bot de Telegram y tareas programadas.
 - Los nombres de carpeta están escritos así en el repo (`aplication`, `infraestructure`) — respetarlos al importar.
 
+## Base de datos (PostgreSQL)
+
+**ChatConfigs** — una fila por chat de Telegram (PK = `id`).
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| id | BIGINT (Long int) | PK — ID del chat de Telegram |
+| lastrevision | DATE | Última fecha de revisión de cursos |
+| uni_countries | INT | FK → `Countries(id)` |
+| disciplinary_field | INT | FK → `Disciplinary_fields(id)` |
+| course_university | INT | FK → `Universities(id)` |
+| uni_languages | INT | FK → `Languages(id)` |
+| course_levels | INT | FK → `Course_levels(id)` |
+| key_word | CHAR(50) | Palabra clave de búsqueda |
+
+**Tablas catálogo** — cada una con dos columnas: `id` (INT/BIGINT, PK) y una columna `CHAR` con el valor:
+
+- `Universities` — universidades
+- `Disciplinary_fields` — áreas disciplinarias
+- `Countries` — países
+- `Languages` — idiomas
+- `Course_levels` — niveles académicos
+
 ## Dependencias (requirements.txt)
 
 | Paquete | Versión | Propósito |
