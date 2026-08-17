@@ -47,9 +47,16 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
    pip install -r requirements.txt
    ```
 
-2. Exportar variables de entorno.
-3. Ejecutar:
+2. Colocar variables de entorno.
+3. Inciar entorno venv
+4. Ejecutar:
 
+   Seed de database
    ```bash
-   python main.py
+   .venv\Scripts\python.exe -m scripts.seed
+   ```
+
+   Tarea sincronizar db con fuentes de datos
+   ```bash
+   .venv\Scripts\python.exe -m src.port.task.syncCoursesTask    
    ```
