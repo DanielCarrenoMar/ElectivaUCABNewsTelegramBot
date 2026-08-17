@@ -4,17 +4,17 @@ from typing import Callable, List, Optional
 
 import requests
 
-from domain.repository.courseRepository import CourseFilters, CourseRepository
+from src.domain.repository.courseRepository import CourseFilters, CourseRepository
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiCourseDto,
+    EmovieApiCoursesDto,
     EmovieApiDataDto,
     EmovieApiResponseDto,
 )
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseDto, parseApiDatetime
-from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from src.infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseDtos, parseApiDatetime
 
 class EmoviesCoursesRepositoryImp(CourseRepository):
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
@@ -34,24 +34,24 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
         courseDtos = self._filterByMinModifiedDate(courseDtos, filters.minModifiedDate)
         courseDtos = self._sortByDateDesc(courseDtos)
 
+        if firstPageDataDto is None:
+            raise RuntimeError("La API de eMOVIES no devolvió datos")
+        mappedData = firstPageDataDto.model_copy(update={"courses": EmovieApiCoursesDto(posts=courseDtos)})
+        courseDtos = emovieResponseToCourseDtos(mappedData, None)
         courses: List[CoursesDto] = []
-        for courseDto in courseDtos:
-            courseDtoMapped = emovieResponseToCourseDto(
-                courseDto,
-                firstPageDataDto,
-                self._scrapeCourseDetail(courseDto),
-            )
 
-            if filters.minStudyHours is not None and courseDtoMapped.study_hours < filters.minStudyHours:
+        for courseDto in courseDtos:
+
+            if filters.minStudyHours is not None and courseDto.study_hours < filters.minStudyHours:
                 logging.debug(
                     "Curso '%s' descartado: studyHours %d < minStudyHours %d",
-                    courseDtoMapped.title,
-                    courseDtoMapped.study_hours,
+                    courseDto.title,
+                    courseDto.study_hours,
                     filters.minStudyHours,
                 )
                 continue
 
-            courses.append(courseDtoMapped)
+            courses.append(courseDto)
 
         logging.info("getCourses devolvió %d cursos", len(courses))
         return courses
@@ -59,10 +59,11 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
     def _buildApiParams(self, filters: CourseFilters) -> EmovieApiParamsDto:
         return EmovieApiParamsDto(
             uni_search=filters.keyword or "",
-            course_levels=filters.educationLevel or self.NO_FILTER_VALUE,
+            course_levels="86" or self.NO_FILTER_VALUE,
             uni_countries=filters.country or self.NO_FILTER_VALUE,
             uni_languages=filters.language or self.NO_FILTER_VALUE,
             course_university=filters.university or self.NO_FILTER_VALUE,
+            disciplinary_field="265"
         )
 
     def _fetchAllCourses(

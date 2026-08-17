@@ -1,7 +1,7 @@
 import logging
 
-from domain.repository.courseRepository import CourseFilters, CourseRepository
-from domain.repository.databaseRepository import DatabaseRepository
+from src.domain.repository.courseRepository import CourseFilters, CourseRepository
+from src.domain.repository.databaseRepository import DatabaseRepository
 
 
 class SyncCoursesUseCase:

@@ -103,7 +103,7 @@ def emovieResponseToCourseDtos(
     courseDtos: list[CoursesDto] = [
         CoursesDto(
             external_id=course.ID,
-            title=course.post_name,
+            title=course.post_title,
             url=_courseUrl(course),
             modified_date=_courseModifiedDate(course),
         )
@@ -111,6 +111,8 @@ def emovieResponseToCourseDtos(
     ]
 
     for i, (disciplinary, level, language) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
+        if i >= len(courseDtos):
+            break
         courseDtos[i] = courseDtos[i].model_copy(
             update={
                 # TODO: traducir los slugs del HTML a IDs de catálogo

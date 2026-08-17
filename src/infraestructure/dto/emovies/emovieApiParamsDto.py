@@ -9,3 +9,4 @@ class EmovieApiParamsDto(BaseModel):
     uni_countries: Optional[str] = None
     uni_languages: Optional[str] = None
     course_university: Optional[str] = None
+    disciplinary_field: Optional[str] = None
