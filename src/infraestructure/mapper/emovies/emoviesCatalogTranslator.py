@@ -29,77 +29,54 @@ _EMOVIES_TO_APP_COURSE_LEVELS = {
 }
 
 _EMOVIES_TO_APP_DISCIPLINARY_FIELDS = {
-    220: 1,  # Administración de empresas
-    262: 2,  # Agronomía y estudios de la tierra
-    322: 3,  # Arquitectura y diseño
-    292: 4,  # Artes
-    294: 5,  # Artes gráficas y escénicas
-    296: 6,  # Artes plásticas
-    326: 7,  # Biología
-    218: 8,  # Ciencias administrativas
-    260: 9,  # Ciencias Biológicas
-    284: 10,  # Ciencias de la comunicación
-    238: 11,  # Ciencias de la salud
-    208: 12,  # Ciencias económico-administrativas
-    324: 13,  # Ciencias exactas y naturales
-    304: 14,  # Ciencias politicas
-    302: 15,  # Ciencias sociales y Humanidades
-    288: 16,  # Comunicación
-    222: 17,  # Contabilidad
-    342: 18,  # Deportes
-    306: 19,  # Derecho
-    210: 20,  # Economía
-    344: 21,  # Educación
-    340: 22,  # Educación y pedagogía
-    240: 23,  # Enfermería
-    242: 24,  # Farmacia
-    308: 25,  # Filosofía y ética
-    224: 26,  # Finanzas
-    328: 27,  # Física
-    330: 28,  # Geografía
-    332: 29,  # Geología
-    226: 30,  # Gestión empresarial
-    310: 31,  # Historia
-    228: 32,  # Hotelería y turismo
-    346: 33,  # Idiomas
-    270: 34,  # Ingeniería Civil
-    280: 35,  # Ingeniería de Sistemas
-    272: 36,  # Ingeniería Eléctrica
-    274: 37,  # Ingeniería Electrónica
-    276: 38,  # Ingeniería Industrial
-    278: 39,  # Ingeniería Mecánica
-    268: 40,  # Ingenierías
-    312: 41,  # Literatura
-    212: 42,  # Macroeconomía
-    334: 43,  # Matemáticas
-    244: 44,  # Medicina
-    230: 45,  # Mercadotecnia y publicidad
-    298: 46,  # Música
-    232: 47,  # Negocios Internacionales
-    246: 48,  # Nutrición
-    248: 49,  # Odontología
-    300: 50,  # Otra Arte
-    236: 51,  # Otra Ciencia administrativa
-    266: 52,  # Otra Ciencia Biológica
-    290: 53,  # Otra Ciencia de la comunicación
-    258: 54,  # Otra Ciencia de la salud
-    216: 55,  # Otra Ciencia económico-administrativa
-    338: 56,  # Otra Ciencia exacta o natural
-    320: 57,  # Otra Ciencia social o humanidad
-    350: 58,  # Otra Educación y pedagogía
-    282: 59,  # Otra Ingeniería
-    348: 60,  # Pedagogía
-    286: 61,  # Periodismo
-    250: 62,  # Psicología
-    336: 63,  # Química
-    314: 64,  # Religión y teología
-    254: 65,  # Salud infantil
-    252: 66,  # Salud y protección laboral
-    234: 67,  # Servicios
-    316: 68,  # Sociología
-    256: 69,  # Terapia y rehabilitación
-    318: 70,  # Trabajo Social
-    264: 71,  # Veterinaria y zootecnia
+    223: 1,  # Contabilidad
+    219: 2,  # Ciencias administrativas
+    263: 3,  # Agronomía y estudios de la tierra
+    323: 4,  # Arquitectura y diseño
+    293: 5,  # Artes
+    261: 6,  # Ciencias Biológicas
+    221: 7,  # Administración de empresas
+    271: 8,  # Ingeniería Civil
+    285: 9,  # Ciencias de la comunicación
+    289: 10,  # Comunicación
+    249: 11,  # Odontología
+    209: 12,  # Ciencias económico-administrativas
+    211: 13,  # Economía
+    345: 14,  # Educación
+    341: 15,  # Educación y pedagogía
+    275: 16,  # Ingeniería Electrónica
+    269: 17,  # Ingenierías
+    225: 18,  # Finanzas
+    295: 19,  # Artes gráficas y escénicas
+    239: 20,  # Ciencias de la salud
+    311: 21,  # Historia
+    347: 22,  # Idiomas
+    307: 23,  # Derecho
+    313: 24,  # Literatura
+    213: 25,  # Macroeconomía
+    231: 26,  # Mercadotecnia y publicidad
+    335: 27,  # Matemáticas
+    215: 28,  # Microeconomía
+    299: 29,  # Música
+    247: 30,  # Nutrición
+    253: 31,  # Salud y protección laboral
+    301: 32,  # Otra Arte
+    291: 33,  # Otra Ciencia de la comunicación
+    217: 34,  # Otra Ciencia económico-administrativa
+    351: 35,  # Otra Educación y pedagogía
+    259: 36,  # Otra Ciencia de la salud
+    321: 37,  # Otra Ciencia social o humanidad
+    349: 38,  # Pedagogía
+    309: 39,  # Filosofía y ética
+    329: 40,  # Física
+    297: 41,  # Artes plásticas
+    305: 42,  # Ciencias politicas
+    251: 43,  # Psicología
+    235: 44,  # Servicios
+    303: 45,  # Ciencias sociales y Humanidades
+    317: 46,  # Sociología
+    343: 47,  # Deportes
+    265: 48,  # Veterinaria y zootecnia
 }
 
 _EMOVIES_TO_APP_UNIVERSITIES: dict[int, int] = {
