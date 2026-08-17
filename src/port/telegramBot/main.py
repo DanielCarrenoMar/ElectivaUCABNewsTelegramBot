@@ -3,7 +3,7 @@ import os
 from telebot import TeleBot
 from dotenv import load_dotenv, get_key
 import logging
-from src.app.telegramBot.command import startCommand, helpCommand, unknownCommand, subscribeCommand, unsubscribeCommand
+from src.port.telegramBot.command import startCommand, helpCommand, unknownCommand, subscribeCommand, unsubscribeCommand
 
 def main():
     logging.basicConfig(

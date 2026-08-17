@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from psycopg import sql
 
-from src.domain.chatConfigModel import ChatConfig
-from src.domain.databaseRepository import DatabaseCourseFilters, DatabaseRepository
+from domain.model.chatConfigModel import ChatConfig
+from domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.infraestructure.dto.database.courseDto import CoursesDto

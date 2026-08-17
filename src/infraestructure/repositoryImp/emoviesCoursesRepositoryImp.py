@@ -4,7 +4,7 @@ from typing import Callable, List, Optional
 
 import requests
 
-from src.domain.courseRepository import CourseFilters, CourseRepository
+from domain.repository.courseRepository import CourseFilters, CourseRepository
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import (
