@@ -1,13 +1,13 @@
 import logging
 
 from src.domain.repository.courseRepository import CourseFilters, CourseRepository
-from src.domain.repository.databaseRepository import DatabaseRepository
+from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 class SyncCoursesUseCase:
-    def __init__(self, courseRepository: CourseRepository, databaseRepository: DatabaseRepository):
+    def __init__(self, courseRepository: CourseRepository):
         self._courseRepository = courseRepository
-        self._databaseRepository = databaseRepository
+        self._databaseRepository = PostgresDatabaseRepositoryImp()
 
     def execute(self) -> int:
         courses = self._courseRepository.getCourses(CourseFilters())

@@ -2,12 +2,13 @@ import logging
 
 from src.domain.model.chatConfigModel import ChatConfig
 from src.domain.repository.notifierRepository import notifierRepository
-from src.domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
+from src.domain.repository.databaseRepository import DatabaseCourseFilters
+from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 class SendCourseToAllUseCase:
-    def __init__(self, databaseRepository: DatabaseRepository, notifier: notifierRepository):
-        self._databaseRepository = databaseRepository
+    def __init__(self, notifier: notifierRepository):
+        self._databaseRepository = PostgresDatabaseRepositoryImp()
         self._notifier = notifier
 
     def execute(self) -> int:

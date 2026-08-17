@@ -1,11 +1,10 @@
 import logging
 
 from src.aplication.unsubscribeChatUseCase import UnsubscribeChatUseCase
-from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 def register(bot):
-    unsubscribeChatUseCase = UnsubscribeChatUseCase(PostgresDatabaseRepositoryImp())
+    unsubscribeChatUseCase = UnsubscribeChatUseCase()
 
     @bot.message_handler(commands=["desuscribirse"])
     def handle_unsubscribe(message):

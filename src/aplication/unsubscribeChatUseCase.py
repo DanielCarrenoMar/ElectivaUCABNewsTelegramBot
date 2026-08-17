@@ -1,11 +1,11 @@
 import logging
 
-from src.domain.repository.databaseRepository import DatabaseRepository
+from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 class UnsubscribeChatUseCase:
-    def __init__(self, databaseRepository: DatabaseRepository):
-        self._databaseRepository = databaseRepository
+    def __init__(self):
+        self._databaseRepository = PostgresDatabaseRepositoryImp()
 
     def execute(self, chatId: int) -> None:
         self._databaseRepository.getOrCreateChatConfig(chatId)

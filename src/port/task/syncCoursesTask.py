@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
 from src.infraestructure.repositoryImp.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
-from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 def main():
@@ -19,8 +18,7 @@ def main():
         raise RuntimeError("Falta variable de entorno DB_URL")
 
     courseRepository = EmoviesCoursesRepositoryImp()
-    databaseRepository = PostgresDatabaseRepositoryImp()
-    syncCoursesUseCase = SyncCoursesUseCase(courseRepository, databaseRepository)
+    syncCoursesUseCase = SyncCoursesUseCase(courseRepository)
 
     inserted = syncCoursesUseCase.execute()
     logging.info("syncCoursesTask: sincronización completada con %d cursos", inserted)

@@ -1,11 +1,10 @@
 import logging
 
 from src.aplication.subscribeChatUseCase import SubscribeChatUseCase
-from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 def register(bot):
-    subscribeChatUseCase = SubscribeChatUseCase(PostgresDatabaseRepositoryImp())
+    subscribeChatUseCase = SubscribeChatUseCase()
 
     @bot.message_handler(commands=["suscribirse"])
     def handle_subscribe(message):

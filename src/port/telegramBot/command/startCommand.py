@@ -1,4 +1,7 @@
 
+from src.aplication.subscribeChatUseCase import SubscribeChatUseCase
+
+
 def register(bot):
     @bot.message_handler(commands=["start"])
     def handle_start(message):
@@ -6,4 +9,6 @@ def register(bot):
             message,
             "👋 Hola. Usa /suscribirse para activar las notificaciones, /desuscribirse para pausarlas o /help para ver todos los comandos.",
         )
+
+        SubscribeChatUseCase().execute(message.chat.id)
        
