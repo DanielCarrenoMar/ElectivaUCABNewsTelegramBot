@@ -5,7 +5,9 @@ from src.domain.model.courseModel import EducationLevelEnum
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
+from src.infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
+
+from bs4 import BeautifulSoup
 
 COURSE_URL_BASE = "https://emovies.oui-iohe.org/nuestros-cursos/"
 
@@ -65,54 +67,57 @@ def _courseModifiedDate(apiCourseDto: EmovieApiCourseDto) -> date:
 
     return max(parsedDates)
 
+def _extractHtmlData(html:str):
+    soup = BeautifulSoup(html, "html.parser")
 
-def _extractIntCode(value: Optional[Union[str, bool]]) -> Optional[int]:
-    """Extrae un código numérico de un valor de la API ('280', '86')."""
-    if not isinstance(value, str) or not value.isdigit():
-        return None
+    cards = soup.find_all("div", class_="item--course")
+    
+    cardsInfo = []
 
-    return int(value)
+    for card in cards:
+        cardClassz = card.get("class", [])
+
+        diciplinary = ""
+        level = ""
+        language = ""
+
+        for cardClass in cardClassz:
+            if cardClass.startswith("course_disciplinary_new"):
+                diciplinary = cardClass.split("-")[1]
+            elif cardClass.startswith("course_level"):
+                level = cardClass.split("-")[1]
+            elif cardClass.startswith("university_language"):
+                language = cardClass.split("-")[1]
+
+        cardsInfo.append((diciplinary, level, language))
+
+    return cardsInfo
 
 
-def _catalogCode(data: Optional[EmovieApiDataDto], field: str) -> Optional[int]:
-    if data is None:
-        return None
-
-    return _extractIntCode(getattr(data, field, None))
-
-
-def emovieResponseToCourseDto(
-    apiCourseDto: EmovieApiCourseDto,
-    apiDataDto: Optional[EmovieApiDataDto],
+def emovieResponseToCourseDtos(
+    apiDataDto: EmovieApiDataDto,
     webScraperCourseDto: Optional[EmoviesWebScraperCourseDto],
-) -> CoursesDto:
+) -> list[CoursesDto]:
     detail = webScraperCourseDto or EmoviesWebScraperCourseDto()
-    data = apiDataDto
 
-    uni_countries = emoviesIdCatalogToAppIdCatalog("countries", _catalogCode(data, "uni_countries"))
-    course_university = emoviesIdCatalogToAppIdCatalog("universities", _catalogCode(data, "course_university"))
-    uni_languages = emoviesIdCatalogToAppIdCatalog("languages", _catalogCode(data, "uni_languages"))
-    disciplinary_field = emoviesIdCatalogToAppIdCatalog(
-        "disciplinary_fields",
-        _catalogCode(data, "disciplinary_field"),
-    )
-    course_levels = emoviesIdCatalogToAppIdCatalog("course_levels", _catalogCode(data, "course_levels"))
+    courseDtos: list[CoursesDto] = [
+        CoursesDto(
+            external_id=course.ID,
+            title=course.post_name,
+            url=_courseUrl(course),
+            modified_date=_courseModifiedDate(course),
+        )
+        for course in apiDataDto.courses.posts
+    ]
 
-    return CoursesDto(
-        external_id=apiCourseDto.ID,
-        title=apiCourseDto.post_name or DEFAULT_TITLE,
-        url=_courseUrl(apiCourseDto),
-        uni_countries=uni_countries,
-        disciplinary_field=disciplinary_field,
-        course_university=course_university,
-        uni_languages=uni_languages,
-        course_levels=course_levels,
-        start_class_date=detail.startClassDate or DEFAULT_DATE,
-        end_class_date=detail.endClassDate or DEFAULT_DATE,
-        start_inscription_date=detail.startInscriptionDate or DEFAULT_DATE,
-        end_inscription_date=detail.endInscriptionDate or DEFAULT_DATE,
-        description=detail.description or apiCourseDto.post_content or DEFAULT_DESCRIPTION,
-        study_hours=detail.studyHours if detail.studyHours is not None else DEFAULT_STUDY_HOURS,
-        slots=detail.slots if detail.slots is not None else DEFAULT_SLOTS,
-        modified_date=_courseModifiedDate(apiCourseDto),
-    )
+    for i, (disciplinary, level, language) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
+        courseDtos[i] = courseDtos[i].model_copy(
+            update={
+                # TODO: traducir los slugs del HTML a IDs de catálogo
+                "disciplinary_field": None,
+                "course_levels": None,
+                "uni_languages": None,
+            }
+        )
+
+    return courseDtos
