@@ -13,7 +13,7 @@ from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiResponseDto,
 )
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from infraestructure.mapper.emovies.emovieMapper import emovieResponseToCourseDto, parseApiDatetime
+from infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseDto, parseApiDatetime
 from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
 
 class EmoviesCoursesRepositoryImp(CourseRepository):
