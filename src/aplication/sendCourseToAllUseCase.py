@@ -1,12 +1,12 @@
 import logging
 
-from src.domain.chatConfigModel import ChatConfig
-from src.domain.courseNotifier import CourseNotifier
-from src.domain.databaseRepository import DatabaseCourseFilters, DatabaseRepository
+from domain.model.chatConfigModel import ChatConfig
+from domain.repository.notifierRepository import notifierRepository
+from domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
 
 
 class SendCourseToAllUseCase:
-    def __init__(self, databaseRepository: DatabaseRepository, notifier: CourseNotifier):
+    def __init__(self, databaseRepository: DatabaseRepository, notifier: notifierRepository):
         self._databaseRepository = databaseRepository
         self._notifier = notifier
 

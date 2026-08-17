@@ -6,7 +6,7 @@ from telebot import TeleBot
 
 from src.aplication.sendCourseToAllUseCase import SendCourseToAllUseCase
 from infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
-from src.infraestructure.telegramCourseNotifier import TelegramCourseNotifier
+from infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
 
     bot = TeleBot(token, parse_mode="HTML")
     databaseRepository = PostgresDatabaseRepositoryImp()
-    notifier = TelegramCourseNotifier(bot)
+    notifier = TelegramNotifierRepositoryImp(bot)
     sendCourseToAllUseCase = SendCourseToAllUseCase(databaseRepository, notifier)
 
     totalSent = sendCourseToAllUseCase.execute()

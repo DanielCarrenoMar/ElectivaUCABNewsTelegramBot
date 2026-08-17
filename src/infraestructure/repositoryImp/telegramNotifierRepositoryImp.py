@@ -5,7 +5,7 @@ from typing import Optional
 from telebot import TeleBot
 
 from src.domain.model.courseModel import CourseModel, EducationLevelEnum
-from src.domain.courseNotifier import CourseNotifier
+from domain.repository.notifierRepository import notifierRepository
 
 DESCRIPTION_MAX_LENGTH = 400
 
@@ -51,7 +51,7 @@ def _truncate(description: str) -> str:
     return text
 
 
-class TelegramCourseNotifier(CourseNotifier):
+class TelegramNotifierRepositoryImp(notifierRepository):
     def __init__(self, bot: TeleBot):
         self._bot = bot
 

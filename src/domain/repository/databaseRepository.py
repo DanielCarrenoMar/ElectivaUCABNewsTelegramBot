@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from src.domain.chatConfigModel import ChatConfig
+from domain.model.chatConfigModel import ChatConfig
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.database.courseDto import CoursesDto
 
