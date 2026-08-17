@@ -5,7 +5,7 @@ from src.domain.model.courseModel import EducationLevelEnum
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
 
 COURSE_URL_BASE = "https://emovies.oui-iohe.org/nuestros-cursos/"
 
@@ -74,41 +74,29 @@ def _extractIntCode(value: Optional[Union[str, bool]]) -> Optional[int]:
     return int(value)
 
 
-def _catalogCode(data: Optional[EmovieApiDataDto], field: str) -> Optional[str]:
+def _catalogCode(data: Optional[EmovieApiDataDto], field: str) -> Optional[int]:
     if data is None:
         return None
 
-    value = getattr(data, field, None)
-    if _extractIntCode(value) is None:
-        return None
-
-    return str(value)
+    return _extractIntCode(getattr(data, field, None))
 
 
 def emovieResponseToCourseDto(
     apiCourseDto: EmovieApiCourseDto,
     apiDataDto: Optional[EmovieApiDataDto],
     webScraperCourseDto: Optional[EmoviesWebScraperCourseDto],
-    translator: Optional[EmoviesCatalogTranslator],
 ) -> CoursesDto:
     detail = webScraperCourseDto or EmoviesWebScraperCourseDto()
     data = apiDataDto
 
-    if translator is not None:
-        uni_countries = translator.codeToDbId("countries", _catalogCode(data, "uni_countries"))
-        course_university = translator.codeToDbId("universities", _catalogCode(data, "course_university"))
-        uni_languages = translator.codeToDbId("languages", _catalogCode(data, "uni_languages"))
-        disciplinary_field = translator.codeToDbId(
-            "disciplinary_fields",
-            _catalogCode(data, "disciplinary_field"),
-        )
-        course_levels = translator.codeToDbId("course_levels", _catalogCode(data, "course_levels"))
-    else:
-        uni_countries = None
-        course_university = None
-        uni_languages = None
-        disciplinary_field = None
-        course_levels = None
+    uni_countries = emoviesIdCatalogToAppIdCatalog("countries", _catalogCode(data, "uni_countries"))
+    course_university = emoviesIdCatalogToAppIdCatalog("universities", _catalogCode(data, "course_university"))
+    uni_languages = emoviesIdCatalogToAppIdCatalog("languages", _catalogCode(data, "uni_languages"))
+    disciplinary_field = emoviesIdCatalogToAppIdCatalog(
+        "disciplinary_fields",
+        _catalogCode(data, "disciplinary_field"),
+    )
+    course_levels = emoviesIdCatalogToAppIdCatalog("course_levels", _catalogCode(data, "course_levels"))
 
     return CoursesDto(
         external_id=apiCourseDto.ID,

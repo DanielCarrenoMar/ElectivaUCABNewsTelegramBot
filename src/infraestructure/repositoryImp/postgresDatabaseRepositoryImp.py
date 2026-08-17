@@ -10,7 +10,14 @@ from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.infraestructure.mapper.courseDtoMapper import courseDtoToCourseModel
-from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
+
+CATALOG_TABLES = {
+    "countries": ("countries", "country"),
+    "universities": ("universities", "university"),
+    "languages": ("languages", "language"),
+    "course_levels": ("course_levels", "course_level"),
+    "disciplinary_fields": ("disciplinary_fields", "disciplinary_field"),
+}
 
 COURSES_COLUMNS = [
     "source_id",
@@ -62,6 +69,27 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
                     raise RuntimeError("No se encontró la fuente 'emovies' en courses_sources")
                 self._emoviesSourceId = row["id"]
         return self._emoviesSourceId
+
+    def _catalogNameMaps(self) -> dict[str, dict[int, str]]:
+        connection = get_db_connection()
+        nameMaps: dict[str, dict[int, str]] = {}
+        for catalog, (table, value_column) in CATALOG_TABLES.items():
+            idToName: dict[int, str] = {}
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL(
+                        "SELECT id, BTRIM({value_col}) AS {value_col} FROM {table}"
+                    ).format(
+                        value_col=sql.Identifier(value_column),
+                        table=sql.Identifier(table),
+                    )
+                )
+                for row in cursor.fetchall():
+                    idToName[row["id"]] = row[value_column]
+
+            nameMaps[catalog] = idToName
+            logging.info("PostgresDatabaseRepositoryImp: catálogo '%s' cargado: %d valores", catalog, len(idToName))
+        return nameMaps
 
     def deleteAllCourses(self) -> None:
         connection = get_db_connection()
@@ -125,7 +153,7 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             rows = cursor.fetchall()
 
         coursesDtos = [self._rowToCoursesDto(row) for row in rows]
-        catalogNames = EmoviesCatalogTranslator().idToNameMaps()
+        catalogNames = self._catalogNameMaps()
         courses = [courseDtoToCourseModel(courseDto, catalogNames) for courseDto in coursesDtos]
         logging.info("PostgresDatabaseRepositoryImp: getCourses devolvió %d cursos", len(courses))
         return courses

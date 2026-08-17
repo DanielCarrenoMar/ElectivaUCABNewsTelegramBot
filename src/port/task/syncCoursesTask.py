@@ -19,8 +19,7 @@ def main():
     if not os.getenv("DB_URL"):
         raise RuntimeError("Falta variable de entorno DB_URL")
 
-    translator = EmoviesCatalogTranslator()
-    courseRepository = EmoviesCoursesRepositoryImp(catalog_translator=translator)
+    courseRepository = EmoviesCoursesRepositoryImp()
     databaseRepository = PostgresDatabaseRepositoryImp()
     syncCoursesUseCase = SyncCoursesUseCase(courseRepository, databaseRepository)
 

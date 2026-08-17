@@ -24,10 +24,8 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
     def __init__(
         self,
         web_scraper: Optional[Callable[[EmovieApiCourseDto], EmoviesWebScraperCourseDto]] = None,
-        catalog_translator: Optional[EmoviesCatalogTranslator] = None,
     ):
         self._web_scraper = web_scraper
-        self._catalog_translator = catalog_translator
 
     def getCourses(self, filters: CourseFilters) -> List[CoursesDto]:
         logging.info("Obteniendo cursos con filtros: %s", filters.model_dump())
@@ -42,7 +40,6 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
                 courseDto,
                 firstPageDataDto,
                 self._scrapeCourseDetail(courseDto),
-                self._catalog_translator,
             )
 
             if filters.minStudyHours is not None and courseDtoMapped.study_hours < filters.minStudyHours:
