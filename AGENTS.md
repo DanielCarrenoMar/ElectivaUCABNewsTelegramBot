@@ -6,18 +6,42 @@ Bot de Telegram que monitorea cursos disponibles en [eMOVIES](https://emovies.ou
 
 ```
 ElectivaUCABNewsTelegramBot/
-├── src/                          # Código fuente (arquitectura limpia por capas)
-│   ├── app/                      # Capa de aplicación: entrada y orquestación
+├── scripts/
+│   └── seed.py                    # Creación de tablas y catálogos en PostgreSQL
+├── src/                           # Código fuente (arquitectura limpia por capas)
+│   ├── app/                       # Capa de aplicación: entrada y orquestación
 │   │   ├── telegramBot/
-│   │   │   ├── main.py           # Punto de entrada: crea TeleBot, registra comandos
-│   │   │   └── command/          # Comandos del bot
-│   │   └── task/                 # Crons jobs
-│   ├── aplication/               # Casos de uso (orquestan domain + infraestructure)
-│   ├── domain/                   # Capa de dominio: entidades y contratos
+│   │   │   ├── main.py            # Punto de entrada: crea TeleBot, registra comandos
+│   │   │   └── command/           # Comandos del bot
+│   │   │       ├── startCommand.py
+│   │   │       ├── helpCommand.py
+│   │   │       ├── subscribeCommand.py
+│   │   │       ├── unsubscribeCommand.py
+│   │   │       └── unknownCommand.py
+│   │   └── task/                  # Crons jobs
+│   │       ├── syncCoursesTask.py             # Sincroniza cursos desde eMOVIES
+│   │       └── sendCoursesToSubcriptorsTask.py # Envía cursos nuevos a suscriptores
+│   ├── aplication/                # Casos de uso (orquestan domain + infraestructure)
+│   │   ├── syncCoursesUseCase.py
+│   │   ├── sendCourseToAllUseCase.py
+│   │   ├── subscribeChatUseCase.py
+│   │   └── unsubscribeChatUseCase.py
+│   ├── domain/                    # Capa de dominio: entidades y contratos
 │   │   ├── model/
-│   └── infraestructure/          # Capa de infraestructura: implementaciones
+│   │   │   ├── courseModel.py
+│   │   │   └── chatConfigModel.py
+│   │   ├── courseRepository.py    # Contrato de origen de cursos (eMOVIES)
+│   │   ├── databaseRepository.py  # Contrato de persistencia (PostgreSQL)
+│   │   └── courseNotifier.py      # Contrato de notificación (Telegram)
+│   └── infraestructure/           # Capa de infraestructura: implementaciones
 │       ├── dto/
+│       │   ├── database/
+│       │   └── emovies/
 │       ├── mapper/
+│       │   └── emovieMapper.py
+│       ├── emoviesCoursesRepositoryImp.py      # Implementa CourseRepository
+│       ├── postgresDatabaseRepositoryImp.py    # Implementa DatabaseRepository
+│       └── telegramCourseNotifier.py           # Implementa CourseNotifier
 ```
 
 ### Reglas de la arquitectura
@@ -36,6 +60,7 @@ ElectivaUCABNewsTelegramBot/
 |---|---|---|
 | id | BIGINT (Long int) | PK — ID del chat de Telegram |
 | lastrevision | DATE | Última fecha de revisión de cursos |
+| is_subscribed | BOOLEAN | Indica si el chat recibe notificaciones (default TRUE) |
 | uni_countries | INT | FK → `Countries(id)` |
 | disciplinary_field | INT | FK → `Disciplinary_fields(id)` |
 | course_university | INT | FK → `Universities(id)` |
@@ -50,6 +75,40 @@ ElectivaUCABNewsTelegramBot/
 - `Countries` — países
 - `Languages` — idiomas
 - `Course_levels` — niveles académicos
+
+El script `scripts/seed.py` inserta los valores de eMOVIES en `countries`, `course_levels` y `disciplinary_fields`. `universities` y `languages` quedan vacíos hasta que se provean datos.
+
+**courses_sources** — catálogo de fuentes de cursos:
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| id | SERIAL | PK |
+| source | CHAR(100) | Nombre de la fuente (p. ej. `emovies`), UNIQUE |
+
+**courses** — tabla de cursos sincronizados desde la fuente (las columnas de catálogo son FKs a las tablas catálogo):
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| id | SERIAL | PK |
+| source_id | INT | FK → `courses_sources(id)` |
+| external_id | INT | ID del curso en la fuente |
+| title | VARCHAR(255) | Título |
+| url | TEXT | URL del curso |
+| uni_countries | INT | FK → `Countries(id)` |
+| disciplinary_field | INT | FK → `Disciplinary_fields(id)` |
+| course_university | INT | FK → `Universities(id)` |
+| uni_languages | INT | FK → `Languages(id)` |
+| course_levels | INT | FK → `Course_levels(id)` |
+| start_class_date | DATE | Inicio de clases |
+| end_class_date | DATE | Fin de clases |
+| start_inscription_date | DATE | Inicio de inscripción |
+| end_inscription_date | DATE | Fin de inscripción |
+| description | TEXT | Descripción |
+| study_hours | INT | Horas de estudio |
+| slots | INT | Cupos |
+| modified_date | DATE | Última fecha de modificación (para detectar cursos nuevos) |
+
+**Mapeo de catálogos eMOVIES ↔ BD**: los códigos de catálogo de eMOVIES se traducen a IDs de catálogo de la BD mediante los pares código→valor de `src/infraestructure/mapper/emoviesCatalogData.py` y `EmoviesCatalogTranslator` (que resuelve valor→ID consultando la BD). En la dirección inversa, `courseDtoToCourseModel` traduce los IDs de catálogo de vuelta a nombres cargando mapas ID→nombre desde la BD.
 
 ## Dependencias (requirements.txt)
 

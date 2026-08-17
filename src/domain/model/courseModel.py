@@ -1,6 +1,7 @@
-
 from datetime import date
 from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel
 
 class EducationLevelEnum(str, Enum):
@@ -9,16 +10,18 @@ class EducationLevelEnum(str, Enum):
 
 
 class CourseModel(BaseModel):
+    externalId: Optional[int] = None
     title: str
     educationLevel: EducationLevelEnum
-    univercity: str
+    university: str
     url: str
     country: str
     language: str
     startClassDate: date
     endClassDate: date
-    startIncriptionDate: date
+    startInscriptionDate: date
     endInscriptionDate: date
     description: str
     studyHours: int
     slots: int
+    modifiedDate: date = date.min

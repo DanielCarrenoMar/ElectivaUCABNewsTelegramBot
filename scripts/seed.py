@@ -1,7 +1,14 @@
+import logging
 import os
+import pathlib
+import sys
 
 import psycopg
 from dotenv import load_dotenv
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+from src.config.defaultValuesCatalog import catalogValues
 
 load_dotenv()
 
@@ -27,6 +34,7 @@ CREATE_CHAT_CONFIGS_TABLE = """
 CREATE TABLE IF NOT EXISTS chatconfigs (
     id BIGINT PRIMARY KEY,
     lastrevision DATE,
+    is_subscribed BOOLEAN NOT NULL DEFAULT TRUE,
     uni_countries INT REFERENCES countries(id),
     disciplinary_field INT REFERENCES disciplinary_fields(id),
     course_university INT REFERENCES universities(id),
@@ -36,6 +44,45 @@ CREATE TABLE IF NOT EXISTS chatconfigs (
 )
 """
 
+CREATE_COURSES_SOURCES_TABLE = """
+CREATE TABLE IF NOT EXISTS courses_sources (
+    id SERIAL PRIMARY KEY,
+    source CHAR(100) NOT NULL UNIQUE
+)
+"""
+
+CREATE_COURSES_TABLE = """
+CREATE TABLE IF NOT EXISTS courses (
+    id SERIAL PRIMARY KEY,
+    source_id INT REFERENCES courses_sources(id),
+    external_id INT,
+    title VARCHAR(255),
+    url TEXT,
+    uni_countries INT REFERENCES countries(id),
+    disciplinary_field INT REFERENCES disciplinary_fields(id),
+    course_university INT REFERENCES universities(id),
+    uni_languages INT REFERENCES languages(id),
+    course_levels INT REFERENCES course_levels(id),
+    start_class_date DATE,
+    end_class_date DATE,
+    start_inscription_date DATE,
+    end_inscription_date DATE,
+    description TEXT,
+    study_hours INT,
+    slots INT,
+    modified_date DATE
+)
+"""
+
+INSERT_CATALOG_VALUE = """
+INSERT INTO {table} ({value_column}) VALUES (%s) ON CONFLICT ({value_column}) DO NOTHING
+"""
+
+INSERT_EMOVIES_SOURCE = """
+INSERT INTO courses_sources (source) VALUES ('emovies')
+ON CONFLICT (source) DO NOTHING
+"""
+
 
 def create_tables():
     with psycopg.connect(os.getenv("DB_URL"), autocommit=True) as connection:
@@ -43,6 +90,18 @@ def create_tables():
             for table, value_column in CATALOG_TABLES.items():
                 cursor.execute(CREATE_CATALOG_TABLE.format(table=table, value_column=value_column))
             cursor.execute(CREATE_CHAT_CONFIGS_TABLE)
+            cursor.execute(CREATE_COURSES_SOURCES_TABLE)
+            cursor.execute(CREATE_COURSES_TABLE)
+            cursor.execute(INSERT_EMOVIES_SOURCE)
+
+            for table, value_column in CATALOG_TABLES.items():
+                values = catalogValues(table)
+                for value in values:
+                    cursor.execute(
+                        INSERT_CATALOG_VALUE.format(table=table, value_column=value_column),
+                        (value,),
+                    )
+                logging.info("Seed: %d valores insertados en catálogo '%s'", len(values), table)
 
 
 if __name__ == "__main__":

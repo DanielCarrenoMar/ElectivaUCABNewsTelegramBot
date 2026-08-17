@@ -5,15 +5,16 @@ from typing import Callable, List, Optional
 import requests
 
 from src.domain.courseRepository import CourseFilters, CourseRepository
-from src.domain.model.courseModel import CourseModel
-from infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
-from infraestructure.dto.emovies.emovieApiResponseDto import (
+from src.infraestructure.dto.database.courseDto import CoursesDto
+from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
+from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiCourseDto,
-    EmovieApiCoursesDto,
+    EmovieApiDataDto,
     EmovieApiResponseDto,
 )
-from infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from src.infraestructure.mapper.emovieMapper import emovieDtoToCourseModel, parseApiDatetime
+from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
+from src.infraestructure.mapper.emovieMapper import emovieResponseToCourseDto, parseApiDatetime
+from src.infraestructure.mapper.emoviesCatalogTranslator import EmoviesCatalogTranslator
 
 class EmoviesCoursesRepositoryImp(CourseRepository):
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
@@ -23,30 +24,37 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
     def __init__(
         self,
         web_scraper: Optional[Callable[[EmovieApiCourseDto], EmoviesWebScraperCourseDto]] = None,
+        catalog_translator: Optional[EmoviesCatalogTranslator] = None,
     ):
         self._web_scraper = web_scraper
+        self._catalog_translator = catalog_translator
 
-    def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
+    def getCourses(self, filters: CourseFilters) -> List[CoursesDto]:
         logging.info("Obteniendo cursos con filtros: %s", filters.model_dump())
         apiParams = self._buildApiParams(filters)
-        courseDtos = self._fetchAllCourses(apiParams)
+        courseDtos, firstPageDataDto = self._fetchAllCourses(apiParams)
         courseDtos = self._filterByMinModifiedDate(courseDtos, filters.minModifiedDate)
         courseDtos = self._sortByDateDesc(courseDtos)
 
-        courses: List[CourseModel] = []
+        courses: List[CoursesDto] = []
         for courseDto in courseDtos:
-            courseModel = emovieDtoToCourseModel(courseDto, self._scrapeCourseDetail(courseDto))
+            courseDtoMapped = emovieResponseToCourseDto(
+                courseDto,
+                firstPageDataDto,
+                self._scrapeCourseDetail(courseDto),
+                self._catalog_translator,
+            )
 
-            if filters.minStudyHours is not None and courseModel.studyHours < filters.minStudyHours:
+            if filters.minStudyHours is not None and courseDtoMapped.study_hours < filters.minStudyHours:
                 logging.debug(
                     "Curso '%s' descartado: studyHours %d < minStudyHours %d",
-                    courseModel.title,
-                    courseModel.studyHours,
+                    courseDtoMapped.title,
+                    courseDtoMapped.study_hours,
                     filters.minStudyHours,
                 )
                 continue
 
-            courses.append(courseModel)
+            courses.append(courseDtoMapped)
 
         logging.info("getCourses devolvió %d cursos", len(courses))
         return courses
@@ -60,22 +68,26 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
             course_university=filters.university or self.NO_FILTER_VALUE,
         )
 
-    def _fetchAllCourses(self, apiParams: EmovieApiParamsDto) -> List[EmovieApiCourseDto]:
-        firstPage = self._fetchPage(apiParams, 1)
-        maxNumPages = firstPage.max_num_pages or 1
+    def _fetchAllCourses(
+        self,
+        apiParams: EmovieApiParamsDto,
+    ) -> tuple[List[EmovieApiCourseDto], Optional[EmovieApiDataDto]]:
+        firstPageData = self._fetchPage(apiParams, 1)
+        coursesPayload = firstPageData.courses
+        maxNumPages = (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
         logging.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
 
         coursesById: dict[int, EmovieApiCourseDto] = {}
         for page in range(1, maxNumPages + 1):
-            payload = firstPage if page == 1 else self._fetchPage(apiParams, page)
-            for courseDto in payload.posts or []:
+            pageData = firstPageData if page == 1 else self._fetchPage(apiParams, page)
+            for courseDto in (pageData.courses.posts if pageData.courses else []) or []:
                 if courseDto.ID is not None:
                     coursesById[courseDto.ID] = courseDto
 
         logging.info("Se obtuvieron %d cursos únicos tras deduplicar por ID", len(coursesById))
-        return list(coursesById.values())
+        return list(coursesById.values()), firstPageData
 
-    def _fetchPage(self, apiParams: EmovieApiParamsDto, page: int) -> EmovieApiCoursesDto:
+    def _fetchPage(self, apiParams: EmovieApiParamsDto, page: int) -> EmovieApiDataDto:
         logging.info("Consultando página %d de la API de eMOVIES", page)
         pageParams = {**apiParams.model_dump(), "page": str(page)}
         response = requests.get(self.API_URL, params=pageParams, timeout=self.REQUEST_TIMEOUT_SECONDS)
@@ -91,7 +103,7 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
             raise ValueError("La API de eMOVIES no devolvió cursos")
 
         logging.info("Página %d devolvió %d cursos", page, len(payload.data.courses.posts))
-        return payload.data.courses
+        return payload.data
 
     def _filterByMinModifiedDate(
         self,

@@ -1,23 +1,35 @@
-from datetime import date
-
 import logging
-from src.domain.courseRepository import CourseFilters
-from src.infraestructure.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
+import os
+
+from dotenv import load_dotenv
+from telebot import TeleBot
+
+from src.aplication.sendCourseToAllUseCase import SendCourseToAllUseCase
+from src.infraestructure.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
+from src.infraestructure.telegramCourseNotifier import TelegramCourseNotifier
+
 
 def main():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
     )
+    load_dotenv()
 
-    print("llamando...")
-    repo = EmoviesCoursesRepositoryImp()
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("Falta variable de entorno TELEGRAM_BOT_TOKEN")
+    if not os.getenv("DB_URL"):
+        raise RuntimeError("Falta variable de entorno DB_URL")
 
-    courses = repo.getCourses(CourseFilters(
-        minModifiedDate=date(2026, 8, 10)
-    ))
+    bot = TeleBot(token, parse_mode="HTML")
+    databaseRepository = PostgresDatabaseRepositoryImp()
+    notifier = TelegramCourseNotifier(bot)
+    sendCourseToAllUseCase = SendCourseToAllUseCase(databaseRepository, notifier)
 
-    print(courses)
+    totalSent = sendCourseToAllUseCase.execute()
+    logging.info("sendCoursesToSubcriptorsTask: total de cursos enviados %d", totalSent)
+
 
 if __name__ == "__main__":
     main()

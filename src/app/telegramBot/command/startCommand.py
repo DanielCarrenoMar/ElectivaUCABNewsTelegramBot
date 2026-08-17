@@ -4,6 +4,6 @@ def register(bot):
     def handle_start(message):
         bot.reply_to(
             message,
-            "👋 Hola. Usa /filters para configurar filtros o /help para ver todos los comandos.",
+            "👋 Hola. Usa /suscribirse para activar las notificaciones, /desuscribirse para pausarlas o /help para ver todos los comandos.",
         )
        

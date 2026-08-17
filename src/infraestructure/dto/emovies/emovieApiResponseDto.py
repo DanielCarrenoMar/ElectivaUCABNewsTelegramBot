@@ -9,6 +9,7 @@ class EmovieApiCourseDto(BaseModel):
     post_date_gmt: Optional[str] = None
     comment_status: Optional[str] = None
     post_name: Optional[str] = None
+    post_content: Optional[str] = None
     post_modified: Optional[str] = None
     post_modified_gmt: Optional[str] = None
     guid: Optional[str] = None

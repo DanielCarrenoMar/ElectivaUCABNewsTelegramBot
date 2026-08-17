@@ -6,10 +6,8 @@ def register(bot):
             (
                 "<b>Comandos</b>\n"
                 "/start - iniciar bot en este chat\n"
-                "/filters - ver y editar filtros actuales\n"
-                "/resetfilters - restaurar filtros por defecto\n"
-                "/check - revisar ahora si hay cursos nuevos\n"
-                "/on - activar monitoreo automático\n"
-                "/off - pausar monitoreo automático"
+                "/help - mostrar esta ayuda\n"
+                "/suscribirse - activar notificaciones de cursos\n"
+                "/desuscribirse - pausar notificaciones de cursos"
             ),
         )

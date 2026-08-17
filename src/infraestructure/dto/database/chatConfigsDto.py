@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class ChatConfigsDto(BaseModel):
     id: Optional[int] = None
+    is_subscribed: Optional[bool] = True
     last_revision: Optional[date] = None
     uni_countries: Optional[int] = None
     disciplinary_field: Optional[int] = None

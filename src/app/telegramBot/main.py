@@ -3,7 +3,7 @@ import os
 from telebot import TeleBot
 from dotenv import load_dotenv, get_key
 import logging
-from command import startCommand, helpCommand, unknownCommand
+from src.app.telegramBot.command import startCommand, helpCommand, unknownCommand, subscribeCommand, unsubscribeCommand
 
 def main():
     logging.basicConfig(
@@ -21,6 +21,8 @@ def main():
 
     startCommand.register(bot)
     helpCommand.register(bot)
+    subscribeCommand.register(bot)
+    unsubscribeCommand.register(bot)
     unknownCommand.register(bot)
 
 if __name__ == "__main__":

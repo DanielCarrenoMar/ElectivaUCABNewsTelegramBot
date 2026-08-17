@@ -1,0 +1,32 @@
+import logging
+import os
+
+from dotenv import load_dotenv
+
+from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
+from src.infraestructure.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
+from src.infraestructure.mapper.emoviesCatalogTranslator import EmoviesCatalogTranslator
+from src.infraestructure.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
+
+
+def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+    load_dotenv()
+
+    if not os.getenv("DB_URL"):
+        raise RuntimeError("Falta variable de entorno DB_URL")
+
+    translator = EmoviesCatalogTranslator()
+    courseRepository = EmoviesCoursesRepositoryImp(catalog_translator=translator)
+    databaseRepository = PostgresDatabaseRepositoryImp()
+    syncCoursesUseCase = SyncCoursesUseCase(courseRepository, databaseRepository)
+
+    inserted = syncCoursesUseCase.execute()
+    logging.info("syncCoursesTask: sincronización completada con %d cursos", inserted)
+
+
+if __name__ == "__main__":
+    main()
