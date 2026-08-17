@@ -1,7 +1,7 @@
 import logging
 
 from src.aplication.unsubscribeChatUseCase import UnsubscribeChatUseCase
-from src.infraestructure.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
+from infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 def register(bot):

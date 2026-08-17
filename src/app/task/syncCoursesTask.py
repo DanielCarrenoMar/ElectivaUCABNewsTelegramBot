@@ -4,9 +4,9 @@ import os
 from dotenv import load_dotenv
 
 from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
-from src.infraestructure.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
+from infraestructure.repositoryImp.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
 from infraestructure.mapper.emovies.emoviesCatalogTranslator import EmoviesCatalogTranslator
-from src.infraestructure.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
+from infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 def main():
