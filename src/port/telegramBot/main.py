@@ -25,5 +25,8 @@ def main():
     unsubscribeCommand.register(bot)
     unknownCommand.register(bot)
 
+    logging.info("telegramBot: bot iniciado y escuchando mensajes...")
+    bot.infinity_polling()
+
 if __name__ == "__main__":
     main()

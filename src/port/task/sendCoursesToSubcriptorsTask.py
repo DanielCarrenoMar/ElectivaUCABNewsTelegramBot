@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from src.aplication.sendCourseToAllUseCase import SendCourseToAllUseCase
-from infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
-from infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
+from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
+from src.infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
 
 
 def main():

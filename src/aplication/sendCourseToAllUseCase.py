@@ -1,8 +1,8 @@
 import logging
 
-from domain.model.chatConfigModel import ChatConfig
-from domain.repository.notifierRepository import notifierRepository
-from domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
+from src.domain.model.chatConfigModel import ChatConfig
+from src.domain.repository.notifierRepository import notifierRepository
+from src.domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
 
 
 class SendCourseToAllUseCase:

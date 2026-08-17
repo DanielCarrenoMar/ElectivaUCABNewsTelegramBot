@@ -5,7 +5,7 @@ from typing import Optional
 from telebot import TeleBot
 
 from src.domain.model.courseModel import CourseModel, EducationLevelEnum
-from domain.repository.notifierRepository import notifierRepository
+from src.domain.repository.notifierRepository import notifierRepository
 
 DESCRIPTION_MAX_LENGTH = 400
 

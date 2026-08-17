@@ -1,6 +1,6 @@
 import logging
 
-from domain.repository.databaseRepository import DatabaseRepository
+from src.domain.repository.databaseRepository import DatabaseRepository
 
 
 class SubscribeChatUseCase:
