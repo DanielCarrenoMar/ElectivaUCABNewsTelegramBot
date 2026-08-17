@@ -6,7 +6,7 @@ from src.domain.repository.databaseRepository import DatabaseCourseFilters
 from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
-class SendCourseToAllUseCase:
+class SendCourseToSubcriptorsUseCase:
     def __init__(self, notifier: notifierRepository):
         self._databaseRepository = PostgresDatabaseRepositoryImp()
         self._notifier = notifier
@@ -14,15 +14,15 @@ class SendCourseToAllUseCase:
     def execute(self) -> int:
         totalSent = 0
         chatConfigs = self._databaseRepository.getSubcriptorsChatConfig()
-        logging.info("SendCourseToAllUseCase: procesando %d configuraciones de chat", len(chatConfigs))
+        logging.info("SendCourseToSubcriptorsUseCase: procesando %d configuraciones de chat", len(chatConfigs))
 
         for chat in chatConfigs:
             try:
                 totalSent += self._processChat(chat)
             except Exception:
-                logging.exception("SendCourseToAllUseCase: error procesando el chat %s", chat.id)
+                logging.exception("SendCourseToSubcriptorsUseCase: error procesando el chat %s", chat.id)
 
-        logging.info("SendCourseToAllUseCase: total de cursos enviados %d", totalSent)
+        logging.info("SendCourseToSubcriptorsUseCase: total de cursos enviados %d", totalSent)
         return totalSent
 
     def _processChat(self, chat: ChatConfig) -> int:
@@ -39,7 +39,7 @@ class SendCourseToAllUseCase:
         courses = self._databaseRepository.getCourses(filters)
         if not courses:
             logging.debug(
-                "SendCourseToAllUseCase: sin cursos para el chat %s; no se actualiza lastrevision",
+                "SendCourseToSubcriptorsUseCase: sin cursos para el chat %s; no se actualiza lastrevision",
                 chat.id,
             )
             return 0
@@ -58,7 +58,7 @@ class SendCourseToAllUseCase:
         self._databaseRepository.updateChatLastRevision(chat.id, newest)
 
         logging.info(
-            "SendCourseToAllUseCase: el chat %s recibió %d curso(s); lastrevision actualizada a %s",
+            "SendCourseToSubcriptorsUseCase: el chat %s recibió %d curso(s); lastrevision actualizada a %s",
             chat.id,
             sent,
             newest,

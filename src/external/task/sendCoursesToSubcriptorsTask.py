@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from aplication.sendCourseToSubcriptorsUseCase import SendCourseToSubcriptorsUseCase
-from src.infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
+from infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
+from infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
 
 
 def main():
@@ -22,8 +23,9 @@ def main():
         raise RuntimeError("Falta variable de entorno DB_URL")
 
     bot = TeleBot(token, parse_mode="HTML")
+    databaseRepository = PostgresDatabaseRepositoryImp()
     notifier = TelegramNotifierRepositoryImp(bot)
-    sendCourseToAllUseCase = SendCourseToSubcriptorsUseCase(notifier)
+    sendCourseToAllUseCase = SendCourseToSubcriptorsUseCase(databaseRepository, notifier)
 
     totalSent = sendCourseToAllUseCase.execute()
     logging.info("sendCoursesToSubcriptorsTask: total de cursos enviados %d", totalSent)
