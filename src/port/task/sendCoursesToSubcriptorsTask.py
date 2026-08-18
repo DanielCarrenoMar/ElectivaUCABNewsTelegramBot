@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from telebot import TeleBot
 
-from aplication.sendCourseToSubcriptorsUseCase import SendCourseToSubcriptorsUseCase
+from src.aplication.sendCourseToSubcriptorsUseCase import SendCourseToSubcriptorsUseCase
 from src.infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
 
 
