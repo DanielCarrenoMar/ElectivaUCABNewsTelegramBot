@@ -43,7 +43,6 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
     REQUEST_TIMEOUT_SECONDS = 30
 
     def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
-        logging.info("Obteniendo cursos de AUSJAL con filtros: %s", filters.model_dump())
         response = requests.get(self.SOURCE_URL, timeout=self.REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
 
@@ -88,7 +87,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
         soup = BeautifulSoup(html, "html.parser")
         courses: List[AusjalCourseDto] = []
 
-        for countryItem in soup.select("div.accordion-item").slice(5):
+        for countryItem in soup.select("div.accordion-item", limit=5):
             countryHeader = countryItem.find("h4")
             uni_countries = countryHeader.get_text(strip=True) if countryHeader else None
 

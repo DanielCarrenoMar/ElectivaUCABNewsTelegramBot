@@ -8,7 +8,7 @@ from src.port.telegramBot.command import startCommand, helpCommand, unknownComma
 def main():
     logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s %(levelname)s %(message)s",
+            format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
         )
     
     load_dotenv()

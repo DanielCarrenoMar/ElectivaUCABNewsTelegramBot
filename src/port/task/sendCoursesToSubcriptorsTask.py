@@ -8,6 +8,12 @@ from src.aplication.sendCourseToSubcriptorsUseCase import SendCourseToSubcriptor
 from src.infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
 from src.port.task.task import log_task_duration
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+    force=True,
+)
+
 
 @log_task_duration
 def sendCoursesToSubcriptorsTask():

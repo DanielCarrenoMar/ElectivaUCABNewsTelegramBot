@@ -8,6 +8,11 @@ from src.infraestructure.repositoryImp.emoviesCoursesRepositoryImp import Emovie
 from src.infraestructure.repositoryImp.ausjalCoursesRepositoryImp import AusjalSourceRepositoryImp
 from src.port.task.task import log_task_duration
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s.%(funcName)s: %(message)s",
+    force=True,
+)
 
 @log_task_duration
 def syncCoursesTask():

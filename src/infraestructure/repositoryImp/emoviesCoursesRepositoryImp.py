@@ -16,6 +16,8 @@ from src.infraestructure.dto.emovies.emovieApiResponseDto import (
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
 from src.infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseModels, parseApiDatetime
 
+logger = logging.getLogger("EmoviesSourceRepositoryImp")
+
 class EmoviesSourceRepositoryImp(CourseSourceRepository):
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
     REQUEST_TIMEOUT_SECONDS = 30
@@ -28,14 +30,14 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
         self._web_scraper = web_scraper
 
     def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
-        logging.info("Obteniendo cursos con filtros: %s", filters.model_dump())
         apiParams = self._buildApiParams(filters)
         courseDtos, firstPageDataDto = self._fetchAllCourses(apiParams)
         courseDtos = self._filterByMinModifiedDate(courseDtos, filters.minModifiedDate)
         courseDtos = self._sortByDateDesc(courseDtos)
 
         if firstPageDataDto is None:
-            raise RuntimeError("La API de eMOVIES no devolvió datos")
+            logger.warning("La API de eMOVIES no devolvió datos; se devuelve una lista vacía de cursos")
+            return []
         mappedData = firstPageDataDto.model_copy(update={"courses": EmovieApiCoursesDto(posts=courseDtos)})
         courseDtos = emovieResponseToCourseModels(mappedData, None)
         courses: List[CourseModel] = []
@@ -43,7 +45,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
         for courseModel in courseDtos:
 
             if filters.minStudyHours is not None and courseModel.studyHours < filters.minStudyHours:
-                logging.debug(
+                logger.debug(
                     "Curso '%s' descartado: studyHours %d < minStudyHours %d",
                     courseModel.title,
                     courseModel.studyHours,
@@ -53,7 +55,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
 
             courses.append(courseModel)
 
-        logging.info("getCourses devolvió %d cursos", len(courses))
+        logger.info("getCourses devolvió %d cursos", len(courses))
         return courses
 
     def _buildApiParams(self, filters: CourseFilters) -> EmovieApiParamsDto:
@@ -71,9 +73,14 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
         apiParams: EmovieApiParamsDto,
     ) -> tuple[List[EmovieApiCourseDto], Optional[EmovieApiDataDto]]:
         firstPageData = self._fetchPage(apiParams, 1)
+        if firstPageData is None:
+            logger.warning(
+                "No se pudo obtener la primera página de cursos de eMOVIES; se devolverá una lista vacía"
+            )
+            return [], None
         coursesPayload = firstPageData.courses
         maxNumPages = (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
-        logging.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
+        logger.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
 
         coursesById: dict[int, EmovieApiCourseDto] = {}
         for page in range(1,2):
@@ -82,24 +89,39 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
                 if courseDto.ID is not None:
                     coursesById[courseDto.ID] = courseDto
 
-        logging.info("Se obtuvieron %d cursos únicos tras deduplicar por ID", len(coursesById))
+        logger.info("Se obtuvieron %d cursos únicos tras deduplicar por ID", len(coursesById))
         return list(coursesById.values()), firstPageData
 
-    def _fetchPage(self, apiParams: EmovieApiParamsDto, page: int) -> EmovieApiDataDto:
-        logging.info("Consultando página %d de la API de eMOVIES", page)
+    def _fetchPage(self, apiParams: EmovieApiParamsDto, page: int) -> Optional[EmovieApiDataDto]:
+        logger.info("Consultando página %d de la API de eMOVIES", page)
         pageParams = {**apiParams.model_dump(), "page": str(page)}
-        response = requests.get(self.API_URL, params=pageParams, timeout=self.REQUEST_TIMEOUT_SECONDS)
-        response.raise_for_status()
-        payload = EmovieApiResponseDto.model_validate(response.json())
+        try:
+            response = requests.get(self.API_URL, params=pageParams, timeout=self.REQUEST_TIMEOUT_SECONDS)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logger.warning(
+                "No se pudo obtener la página %d de la API de eMOVIES: %s",
+                page,
+                str(e),
+            )
+            return None
+        
+        payload = None
+        try:   
+            payload = EmovieApiResponseDto.model_validate(response.json())
+        except Exception as e:
+            logger.error("Error al parsear la respuesta JSON de la API de eMOVIES en la página %d: %s", page, str(e))
+            return None
+
         if not payload.success:
-            logging.warning("La API de eMOVIES respondió success=false en la página %d", page)
-            raise ValueError("La API de eMOVIES respondió success=false")
+            logger.warning("La API de eMOVIES respondió success=false en la página %d", page)
+            return None
 
         if payload.data is None or payload.data.courses is None:
-            logging.warning("La API de eMOVIES no devolvió cursos en la página %d", page)
-            raise ValueError("La API de eMOVIES no devolvió cursos")
+            logger.warning("La API de eMOVIES no devolvió cursos en la página %d", page)
+            return None
 
-        logging.info("Página %d devolvió %d cursos", page, len(payload.data.courses.posts))
+        logger.info("Página %d devolvió %d cursos", page, len(payload.data.courses.posts))
         return payload.data
 
     def _filterByMinModifiedDate(
@@ -116,7 +138,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
             if modifiedDate is not None and modifiedDate >= minModifiedDate:
                 filtered.append(courseDto)
 
-        logging.info(
+        logger.info(
             "Filtro por fecha mínima %s: %d cursos -> %d cursos",
             minModifiedDate,
             len(courseDtos),
@@ -130,7 +152,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
             key=lambda courseDto: self._courseDate(courseDto),
             reverse=True,
         )
-        logging.debug("Cursos ordenados por fecha descendente: %d", len(sortedDtos))
+        logger.debug("Cursos ordenados por fecha descendente: %d", len(sortedDtos))
         return sortedDtos
 
     def _courseDate(self, courseDto: EmovieApiCourseDto) -> date:
@@ -154,11 +176,11 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
         Hasta que exista, devuelve un DTO vacío y el mapper usa valores por defecto.
         """
         if self._web_scraper is None:
-            logging.debug(
+            logger.debug(
                 "Scraper web no configurado; se usarán valores por defecto para el curso %s",
                 courseDto.ID,
             )
             return EmoviesWebScraperCourseDto()
 
-        logging.debug("Scrapeando detalle web del curso %s", courseDto.ID)
+        logger.debug("Scrapeando detalle web del curso %s", courseDto.ID)
         return self._web_scraper(courseDto)
