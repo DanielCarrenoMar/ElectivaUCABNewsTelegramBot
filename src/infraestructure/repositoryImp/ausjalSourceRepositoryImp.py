@@ -39,31 +39,15 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
     REQUEST_TIMEOUT_SECONDS = 30
 
     def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
+        logger.info("getCourses: obteniendo cursos de AUSJAL desde %s", self.SOURCE_URL)
         response = requests.get(self.SOURCE_URL, timeout=self.REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
-
+        logger.info("getCourses: respuesta recibida de AUSJAL, procesando HTML")
         courseDtos = self.extractCourses(response.text)
         courses: List[CourseModel] = []
 
         for courseDto in courseDtos:
             courseModel = ausjalCourseDtoToCourseModel(courseDto)
-
-            if filters.minStudyHours is not None and courseModel.studyHours < filters.minStudyHours:
-                logger.debug(
-                    "Curso '%s' descartado: studyHours %d < minStudyHours %d",
-                    courseModel.title,
-                    courseModel.studyHours,
-                    filters.minStudyHours,
-                )
-                continue
-
-            if filters.keyword is not None and filters.keyword.lower() not in courseModel.title.lower():
-                logger.debug(
-                    "Curso '%s' descartado: no contiene keyword '%s'",
-                    courseModel.title,
-                    filters.keyword,
-                )
-                continue
 
             if filters.minModifiedDate is not None and courseModel.modifiedDate < filters.minModifiedDate:
                 logger.debug(
