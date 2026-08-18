@@ -10,13 +10,13 @@ from src.infraestructure.dto.database.courseDto import CoursesDto
 
 
 class DatabaseCourseFilters(BaseModel):
-    country_id: Optional[int] = None
-    disciplinary_field_id: Optional[int] = None
-    university_id: Optional[int] = None
-    language_id: Optional[int] = None
-    course_level_id: Optional[int] = None
+    countryId: Optional[int] = None
+    disciplinaryFieldId: Optional[int] = None
+    universityId: Optional[int] = None
+    languageId: Optional[int] = None
+    courseLevelId: Optional[int] = None
     keyword: Optional[str] = None
-    min_modified_date: Optional[date] = None
+    minModifiedDate: Optional[date] = None
 
 
 class DatabaseRepository(ABC):

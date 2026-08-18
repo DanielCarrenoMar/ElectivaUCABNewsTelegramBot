@@ -12,6 +12,7 @@ class CourseFilters(BaseModel):
     educationLevel: Optional[str] = None
     country: Optional[str] = None
     language: Optional[str] = None
+    disciplinaryField: Optional[str] = None
     minStudyHours: Optional[int] = None
     university: Optional[str] = None
     minModifiedDate: Optional[date] = None

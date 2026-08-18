@@ -120,11 +120,11 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         params: list = []
 
         catalogFilters = [
-            ("uni_countries", filters.country_id),
-            ("disciplinary_field", filters.disciplinary_field_id),
-            ("course_university", filters.university_id),
-            ("uni_languages", filters.language_id),
-            ("course_levels", filters.course_level_id),
+            ("uni_countries", filters.countryId),
+            ("disciplinary_field", filters.disciplinaryFieldId),
+            ("course_university", filters.universityId),
+            ("uni_languages", filters.languageId),
+            ("course_levels", filters.courseLevelId),
         ]
         for column, filterId in catalogFilters:
             if filterId is None:
@@ -136,9 +136,9 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             conditions.append(sql.SQL("(title ILIKE %s OR description ILIKE %s)"))
             params.extend([f"%{filters.keyword}%", f"%{filters.keyword}%"])
 
-        if filters.min_modified_date is not None:
+        if filters.minModifiedDate is not None:
             conditions.append(sql.SQL("modified_date > %s"))
-            params.append(filters.min_modified_date)
+            params.append(filters.minModifiedDate)
 
         query = sql.SQL("SELECT {columns} FROM courses").format(
             columns=sql.SQL(", ").join(sql.Identifier(column) for column in COURSES_COLUMNS)

@@ -28,13 +28,13 @@ class SendCourseToSubcriptorsUseCase:
     def _processChat(self, chat: ChatConfig) -> int:
 
         filters = DatabaseCourseFilters(
-            country_id=chat.uniCountries,
-            disciplinary_field_id=chat.disciplinaryField,
-            university_id=chat.courseUniversity,
-            language_id=chat.uniLanguages,
-            course_level_id=chat.courseLevels,
+            countryId=chat.uniCountries,
+            disciplinaryFieldId=chat.disciplinaryField,
+            universityId=chat.courseUniversity,
+            languageId=chat.uniLanguages,
+            courseLevelId=chat.courseLevels,
             keyword=chat.keyWord,
-            min_modified_date=chat.lastRevision,
+            minModifiedDate=chat.lastRevision,
         )
         courses = self._databaseRepository.getCourses(filters)
         if not courses:
