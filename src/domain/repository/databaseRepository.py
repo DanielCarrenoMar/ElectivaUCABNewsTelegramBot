@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from src.domain.model.chatConfigModel import ChatConfig
-from src.domain.model.courseModel import CourseModel
+from src.domain.model.courseModel import ShowCourseModel
 from src.infraestructure.dto.database.courseDto import CoursesDto
 
 
@@ -29,7 +29,7 @@ class DatabaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def getCourses(self, filters: DatabaseCourseFilters) -> List[CourseModel]:
+    def getCourses(self, filters: DatabaseCourseFilters) -> List[ShowCourseModel]:
         raise NotImplementedError
 
     @abstractmethod

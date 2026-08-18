@@ -1,8 +1,7 @@
 from datetime import date, datetime
 from typing import Optional, Union
 
-from src.domain.model.courseModel import EducationLevelEnum
-from src.infraestructure.dto.database.courseDto import CoursesDto
+from src.domain.model.courseModel import CourseModel, EducationLevelEnum
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
 from src.infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
@@ -94,32 +93,40 @@ def _extractHtmlData(html:str):
     return cardsInfo
 
 
-def emovieResponseToCourseDtos(
+def emovieResponseToCourseModels(
     apiDataDto: EmovieApiDataDto,
     webScraperCourseDto: Optional[EmoviesWebScraperCourseDto],
-) -> list[CoursesDto]:
+) -> list[CourseModel]:
     detail = webScraperCourseDto or EmoviesWebScraperCourseDto()
 
-    courseDtos: list[CoursesDto] = [
-        CoursesDto(
-            external_id=course.ID,
+    courseModels: list[CourseModel] = [
+        CourseModel(
+            externalId=course.ID,
             title=course.post_title,
             url=_courseUrl(course),
-            modified_date=_courseModifiedDate(course),
+            modifiedDate=_courseModifiedDate(course),
+            educationLevel=DEFAULT_EDUCATION_LEVEL,
+            startClassDate=DEFAULT_DATE,
+            endClassDate=DEFAULT_DATE,
+            startInscriptionDate=DEFAULT_DATE,
+            endInscriptionDate=DEFAULT_DATE,
+            description=DEFAULT_DESCRIPTION,
+            studyHours=DEFAULT_STUDY_HOURS,
+            slots=DEFAULT_SLOTS,
         )
         for course in apiDataDto.courses.posts
     ]
 
     for i, (disciplinary, level, language) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
-        if i >= len(courseDtos):
+        if i >= len(courseModels):
             break
-        courseDtos[i] = courseDtos[i].model_copy(
+        courseModels[i] = courseModels[i].model_copy(
             update={
                 # TODO: traducir los slugs del HTML a IDs de catálogo
-                "disciplinary_field": None,
-                "course_levels": None,
-                "uni_languages": None,
+                "disciplinaryField": None,
+                "courseLevel": None,
+                "language": None,
             }
         )
 
-    return courseDtos
+    return courseModels

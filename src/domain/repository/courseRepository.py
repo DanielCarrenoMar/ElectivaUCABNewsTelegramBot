@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from src.infraestructure.dto.database.courseDto import CoursesDto
+from src.domain.model.courseModel import CourseModel
 
 
 class CourseFilters(BaseModel):
@@ -18,7 +18,7 @@ class CourseFilters(BaseModel):
     minModifiedDate: Optional[date] = None
 
 
-class CourseRepository(ABC):
+class CourseSourceRepository(ABC):
     @abstractmethod
-    def getCourses(self, filters: CourseFilters) -> List[CoursesDto]:
+    def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
         raise NotImplementedError

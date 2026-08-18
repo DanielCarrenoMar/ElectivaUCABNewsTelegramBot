@@ -33,14 +33,8 @@ def _dateRange(start: Optional[date], end: Optional[date]) -> str:
     return f"{startLabel} - {endLabel}"
 
 
-def _educationLevelLabel(level: EducationLevelEnum) -> str:
-    if level == EducationLevelEnum.POSTGRADUATE:
-        return "Posgrado"
-    return "Pregrado"
-
-
-def _truncate(description: str) -> str:
-    text = description.strip()
+def _truncate(description: Optional[str]) -> str:
+    text = (description or "").strip()
     if not text:
         return _PENDING
     if len(text) > DESCRIPTION_MAX_LENGTH:
@@ -57,10 +51,12 @@ class CourseModel(BaseModel):
     externalId: Optional[int] = None
     title: str
     educationLevel: EducationLevelEnum
-    university: str
+    university: Optional[int] = None
     url: str
-    country: str
-    language: str
+    country: Optional[int] = None
+    language: Optional[int] = None
+    disciplinaryField: Optional[int] = None
+    courseLevel: Optional[int] = None
     startClassDate: date
     endClassDate: date
     startInscriptionDate: date
@@ -70,6 +66,24 @@ class CourseModel(BaseModel):
     slots: int
     modifiedDate: date = date.min
 
+
+class ShowCourseModel(BaseModel):
+    university: Optional[str] = None
+    country: Optional[str] = None
+    language: Optional[str] = None
+    disciplinaryField: Optional[str] = None
+    courseLevel: Optional[str] = None
+    title: Optional[str] = None
+    url: Optional[str] = None
+    startClassDate: Optional[date] = None
+    endClassDate: Optional[date] = None
+    startInscriptionDate: Optional[date] = None
+    endInscriptionDate: Optional[date] = None
+    description: Optional[str] = None
+    studyHours: Optional[int] = None
+    slots: Optional[int] = None
+    modifiedDate: Optional[date] = None
+
     def buildMessage(self) -> str:
         lines = [
             f"<b>{self.title or _PENDING}</b>",
@@ -77,7 +91,6 @@ class CourseModel(BaseModel):
             f"🏛️ Universidad: {_textOrPending(self.university)}",
             f"🌍 País: {_textOrPending(self.country)}",
             f"🗣️ Idioma: {_textOrPending(self.language)}",
-            f"🎓 Nivel: {_educationLevelLabel(self.educationLevel)}",
             f"📅 Clases: {_dateRange(self.startClassDate, self.endClassDate)}",
             f"📝 Inscripción: {_dateRange(self.startInscriptionDate, self.endInscriptionDate)}",
             f"⏱️ Horas de estudio: {_numberOrPending(self.studyHours)}",

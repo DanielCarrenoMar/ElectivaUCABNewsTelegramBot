@@ -4,8 +4,8 @@ from typing import Callable, List, Optional
 
 import requests
 
-from src.domain.repository.courseRepository import CourseFilters, CourseRepository
-from src.infraestructure.dto.database.courseDto import CoursesDto
+from src.domain.model.courseModel import CourseModel
+from src.domain.repository.courseRepository import CourseFilters, CourseSourceRepository
 from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiCourseDto,
@@ -14,9 +14,9 @@ from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiResponseDto,
 )
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from src.infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseDtos, parseApiDatetime
+from src.infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseModels, parseApiDatetime
 
-class EmoviesCoursesRepositoryImp(CourseRepository):
+class EmoviesCoursesRepositoryImp(CourseSourceRepository):
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
     REQUEST_TIMEOUT_SECONDS = 30
     NO_FILTER_VALUE = "NaN"
@@ -27,7 +27,7 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
     ):
         self._web_scraper = web_scraper
 
-    def getCourses(self, filters: CourseFilters) -> List[CoursesDto]:
+    def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
         logging.info("Obteniendo cursos con filtros: %s", filters.model_dump())
         apiParams = self._buildApiParams(filters)
         courseDtos, firstPageDataDto = self._fetchAllCourses(apiParams)
@@ -37,21 +37,21 @@ class EmoviesCoursesRepositoryImp(CourseRepository):
         if firstPageDataDto is None:
             raise RuntimeError("La API de eMOVIES no devolvió datos")
         mappedData = firstPageDataDto.model_copy(update={"courses": EmovieApiCoursesDto(posts=courseDtos)})
-        courseDtos = emovieResponseToCourseDtos(mappedData, None)
-        courses: List[CoursesDto] = []
+        courseDtos = emovieResponseToCourseModels(mappedData, None)
+        courses: List[CourseModel] = []
 
-        for courseDto in courseDtos:
+        for courseModel in courseDtos:
 
-            if filters.minStudyHours is not None and courseDto.study_hours < filters.minStudyHours:
+            if filters.minStudyHours is not None and courseModel.studyHours < filters.minStudyHours:
                 logging.debug(
                     "Curso '%s' descartado: studyHours %d < minStudyHours %d",
-                    courseDto.title,
-                    courseDto.study_hours,
+                    courseModel.title,
+                    courseModel.studyHours,
                     filters.minStudyHours,
                 )
                 continue
 
-            courses.append(courseDto)
+            courses.append(courseModel)
 
         logging.info("getCourses devolvió %d cursos", len(courses))
         return courses

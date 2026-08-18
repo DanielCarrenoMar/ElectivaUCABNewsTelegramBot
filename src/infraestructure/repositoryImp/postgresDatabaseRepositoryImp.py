@@ -6,18 +6,38 @@ from psycopg import sql
 
 from src.domain.model.chatConfigModel import ChatConfig
 from src.domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
-from src.domain.model.courseModel import CourseModel
+from src.domain.model.courseModel import ShowCourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.infraestructure.dto.database.courseDto import CoursesDto
-from src.infraestructure.mapper.courseDtoMapper import courseDtoToCourseModel
 
-CATALOG_TABLES = {
-    "countries": ("countries", "country"),
-    "universities": ("universities", "university"),
-    "languages": ("languages", "language"),
-    "course_levels": ("course_levels", "course_level"),
-    "disciplinary_fields": ("disciplinary_fields", "disciplinary_field"),
-}
+COURSES_SELECT_COLUMNS = [
+    "c.id",
+    "c.source_id",
+    "c.external_id",
+    "c.title",
+    "c.url",
+    "c.uni_countries",
+    "c.disciplinary_field",
+    "c.course_university",
+    "c.uni_languages",
+    "c.course_levels",
+    "c.start_class_date",
+    "c.end_class_date",
+    "c.start_inscription_date",
+    "c.end_inscription_date",
+    "c.description",
+    "c.study_hours",
+    "c.slots",
+    "c.modified_date",
+]
+
+CATALOG_JOINS = [
+    ("countries", "country", "country_name", "c.uni_countries"),
+    ("universities", "university", "university_name", "c.course_university"),
+    ("languages", "language", "language_name", "c.uni_languages"),
+    ("course_levels", "course_level", "course_level_name", "c.course_levels"),
+    ("disciplinary_fields", "disciplinary_field", "disciplinary_field_name", "c.disciplinary_field"),
+]
 
 COURSES_COLUMNS = [
     "source_id",
@@ -70,27 +90,6 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
                 self._emoviesSourceId = row["id"]
         return self._emoviesSourceId
 
-    def _catalogNameMaps(self) -> dict[str, dict[int, str]]:
-        connection = get_db_connection()
-        nameMaps: dict[str, dict[int, str]] = {}
-        for catalog, (table, value_column) in CATALOG_TABLES.items():
-            idToName: dict[int, str] = {}
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    sql.SQL(
-                        "SELECT id, BTRIM({value_col}) AS {value_col} FROM {table}"
-                    ).format(
-                        value_col=sql.Identifier(value_column),
-                        table=sql.Identifier(table),
-                    )
-                )
-                for row in cursor.fetchall():
-                    idToName[row["id"]] = row[value_column]
-
-            nameMaps[catalog] = idToName
-            logging.info("PostgresDatabaseRepositoryImp: catálogo '%s' cargado: %d valores", catalog, len(idToName))
-        return nameMaps
-
     def deleteAllCourses(self) -> None:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -115,7 +114,7 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         logging.info("PostgresDatabaseRepositoryImp: se insertaron %d cursos en la tabla courses", len(courses))
         return len(courses)
 
-    def getCourses(self, filters: DatabaseCourseFilters) -> List[CourseModel]:
+    def getCourses(self, filters: DatabaseCourseFilters) -> List[ShowCourseModel]:
         conditions: List[sql.Composable] = []
         params: list = []
 
@@ -129,34 +128,66 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         for column, filterId in catalogFilters:
             if filterId is None:
                 continue
-            conditions.append(sql.SQL("({col} = %s OR %s IS NULL)").format(col=sql.Identifier(column)))
+            conditions.append(sql.SQL("(c.{col} = %s OR %s IS NULL)").format(col=sql.Identifier(column)))
             params.extend([filterId, filterId])
 
         if filters.keyword:
-            conditions.append(sql.SQL("(title ILIKE %s OR description ILIKE %s)"))
+            conditions.append(sql.SQL("(c.title ILIKE %s OR c.description ILIKE %s)"))
             params.extend([f"%{filters.keyword}%", f"%{filters.keyword}%"])
 
         if filters.minModifiedDate is not None:
-            conditions.append(sql.SQL("modified_date > %s"))
+            conditions.append(sql.SQL("c.modified_date > %s"))
             params.append(filters.minModifiedDate)
 
-        query = sql.SQL("SELECT {columns} FROM courses").format(
-            columns=sql.SQL(", ").join(sql.Identifier(column) for column in COURSES_COLUMNS)
+        selectColumns = [sql.SQL(column) for column in COURSES_SELECT_COLUMNS]
+        for table, valueColumn, alias, joinColumn in CATALOG_JOINS:
+            selectColumns.append(
+                sql.SQL("BTRIM({table}.{value_col}) AS {alias}").format(
+                    table=sql.Identifier(table),
+                    value_col=sql.Identifier(valueColumn),
+                    alias=sql.Identifier(alias),
+                )
+            )
+
+        query = sql.SQL("SELECT {columns} FROM courses AS c").format(
+            columns=sql.SQL(", ").join(selectColumns)
         )
+        for table, valueColumn, alias, joinColumn in CATALOG_JOINS:
+            query = query + sql.SQL(" LEFT JOIN {table} ON {table}.id = {join}").format(
+                table=sql.Identifier(table),
+                join=sql.SQL(joinColumn),
+            )
         if conditions:
             query = query + sql.SQL(" WHERE ") + sql.SQL(" AND ").join(conditions)
-        query = query + sql.SQL(" ORDER BY modified_date DESC NULLS LAST")
+        query = query + sql.SQL(" ORDER BY c.modified_date DESC NULLS LAST")
 
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        coursesDtos = [self._rowToCoursesDto(row) for row in rows]
-        catalogNames = self._catalogNameMaps()
-        courses = [courseDtoToCourseModel(courseDto, catalogNames) for courseDto in coursesDtos]
+        courses = [self._rowToShowCourseModel(row) for row in rows]
         logging.info("PostgresDatabaseRepositoryImp: getCourses devolvió %d cursos", len(courses))
         return courses
+
+    def _rowToShowCourseModel(self, row: dict) -> ShowCourseModel:
+        return ShowCourseModel(
+            title=row.get("title"),
+            university=row.get("university_name"),
+            url=row.get("url"),
+            country=row.get("country_name"),
+            language=row.get("language_name"),
+            disciplinaryField=row.get("disciplinary_field_name"),
+            courseLevel=row.get("course_level_name"),
+            startClassDate=row.get("start_class_date"),
+            endClassDate=row.get("end_class_date"),
+            startInscriptionDate=row.get("start_inscription_date"),
+            endInscriptionDate=row.get("end_inscription_date"),
+            description=row.get("description"),
+            studyHours=row.get("study_hours"),
+            slots=row.get("slots"),
+            modifiedDate=row.get("modified_date"),
+        )
 
     def getOrCreateChatConfig(self, chatId: int) -> ChatConfig:
         connection = get_db_connection()
@@ -260,26 +291,4 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             dto.study_hours,
             dto.slots,
             dto.modified_date,
-        )
-
-    def _rowToCoursesDto(self, row: dict) -> CoursesDto:
-        return CoursesDto(
-            id=row.get("id"),
-            source_id=row.get("source_id"),
-            external_id=row.get("external_id"),
-            title=row.get("title") or None,
-            url=row.get("url") or None,
-            uni_countries=row.get("uni_countries"),
-            disciplinary_field=row.get("disciplinary_field"),
-            course_university=row.get("course_university"),
-            uni_languages=row.get("uni_languages"),
-            course_levels=row.get("course_levels"),
-            start_class_date=row.get("start_class_date"),
-            end_class_date=row.get("end_class_date"),
-            start_inscription_date=row.get("start_inscription_date"),
-            end_inscription_date=row.get("end_inscription_date"),
-            description=row.get("description") or None,
-            study_hours=row.get("study_hours"),
-            slots=row.get("slots"),
-            modified_date=row.get("modified_date"),
         )
