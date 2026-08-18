@@ -53,12 +53,19 @@ class ShowCourseModel(BaseModel):
     def _formatText(cls, value: Optional[str]) -> Optional[str]:
         return value.strip() if value and value.strip() else None
 
-    @field_validator("startClassDate", "endClassDate", "startInscriptionDate", "endInscriptionDate", "modifiedDate")
+    @field_validator("startClassDate", "endClassDate", "startInscriptionDate", "endInscriptionDate")
     @classmethod
     def _formatDate(cls, value: Optional[date]) -> Optional[str]:
         if value is None or value == date.min:
             return None
         return value.strftime("%Y-%m-%d")
+
+    @field_validator("modifiedDate")
+    @classmethod
+    def _normalizeModifiedDate(cls, value: Optional[date]) -> Optional[date]:
+        if value is None or value == date.min:
+            return None
+        return value
 
     @field_validator("studyHours", "slots")
     @classmethod
@@ -95,6 +102,8 @@ class ShowCourseModel(BaseModel):
     def buildMessage(self) -> str:
         lines = [
             f"<b>{self.title or _PENDING}</b>",
+            f"  🏫 Fuente: {self.source}" if self.source else "",
+            f"  🕒 Fecha de modificación: {self.modifiedDate.strftime('%Y-%m-%d') if self.modifiedDate else ''}",
             f"  🔗 <a href=\"{self.url}\">Ver curso</a>" if self.url else "",
             f"  🏛️ Universidad: {self.university}" if self.university else "",
             f"  🌍 País: {self.country}" if self.country else "",
