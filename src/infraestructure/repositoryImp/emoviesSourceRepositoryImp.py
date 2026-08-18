@@ -58,17 +58,26 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
         apiParams = self._buildApiParams(filters)
         try:
             self._startBrowser()
-            courseDtos, firstPageDataDto = self._fetchAllCourses(apiParams)
+            pagesData = self._fetchAllCourses(apiParams)
         finally:
             self._stopBrowser()
 
-        courseDtos = self._filterByMinModifiedDate(courseDtos, filters.minModifiedDate)
-        courseDtos = self._sortByDateDesc(courseDtos)
-
-        if firstPageDataDto is None:
+        if pagesData is None:
             logger.warning("La API de eMOVIES no devolvió datos; se devuelve una lista vacía de cursos")
             return []
 
+        coursesById: dict[int, EmovieApiCourseDto] = {}
+        for pageData in pagesData:
+            for courseDto in pageData.courses.posts or []:
+                if courseDto.ID is not None:
+                    coursesById[courseDto.ID] = courseDto
+
+        logger.info("Se obtuvieron %d cursos únicos tras deduplicar por ID", len(coursesById))
+
+        courseDtos = self._filterByMinModifiedDate(list(coursesById.values()), filters.minModifiedDate)
+        courseDtos = self._sortByDateDesc(courseDtos)
+
+        firstPageDataDto = pagesData[0]
         mappedData = firstPageDataDto.model_copy(update={"courses": EmovieApiCoursesDto(posts=courseDtos)})
         courseModels = emovieResponseToCourseModels(mappedData, None)
         courses: List[CourseModel] = []
@@ -100,30 +109,29 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
     def _fetchAllCourses(
         self,
         apiParams: EmovieApiParamsDto,
-    ) -> tuple[List[EmovieApiCourseDto], Optional[EmovieApiDataDto]]:
+    ) -> Optional[List[EmovieApiDataDto]]:
         firstPageData = self._fetchPage(apiParams, 1)
         if firstPageData is None:
             logger.warning(
                 "No se pudo obtener la primera página de cursos de eMOVIES; se devolverá una lista vacía"
             )
-            return [], None
+            return None
 
         coursesPayload = firstPageData.courses
         maxNumPages = (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
         logger.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
 
-        coursesById: dict[int, EmovieApiCourseDto] = {}
-        for page in range(1, maxNumPages + 1):
-            pageData = firstPageData if page == 1 else self._fetchPage(apiParams, page)
+        # La lista arranca con la primera página ya incluida; se consultan las restantes.
+        pagesData: List[EmovieApiDataDto] = [firstPageData]
+        for page in range(2, maxNumPages + 1):
+            pageData = self._fetchPage(apiParams, page)
             if pageData is None or pageData.courses is None:
                 logger.warning("Página %d de eMOVIES sin datos; se omite", page)
                 continue
-            for courseDto in pageData.courses.posts or []:
-                if courseDto.ID is not None:
-                    coursesById[courseDto.ID] = courseDto
+            pagesData.append(pageData)
 
-        logger.info("Se obtuvieron %d cursos únicos tras deduplicar por ID", len(coursesById))
-        return list(coursesById.values()), firstPageData
+        logger.info("Se obtuvieron %d páginas de cursos desde eMOVIES", len(pagesData))
+        return pagesData
 
     def _fetchPage(self, apiParams: EmovieApiParamsDto, page: int) -> Optional[EmovieApiDataDto]:
         logger.info("Consultando página %d de la API de eMOVIES (Playwright)", page)
