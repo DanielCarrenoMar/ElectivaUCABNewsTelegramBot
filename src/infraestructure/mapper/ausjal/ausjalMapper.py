@@ -5,7 +5,7 @@ from src.infraestructure.mapper.ausjal.ausjalCatalogTranslator import ausjalText
 
 def ausjalCourseDtoToCourseModel(dto: AusjalCourseDto) -> CourseModel:
     return CourseModel(
-        sourceId=courseSourceId("ausjal"),
+        sourceId=2, # id de Ausjal,
         title=dto.title,
         courseLevel=ausjalTextToAppIdCatalog("education_levels", dto.courseLevels),
         university=ausjalTextToAppIdCatalog("universities", dto.courseUniversity),

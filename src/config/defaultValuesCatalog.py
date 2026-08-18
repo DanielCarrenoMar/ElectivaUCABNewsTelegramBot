@@ -1,8 +1,8 @@
 from typing import Optional
 
 APP_COURSE_SOURCES: dict[str, str] = {
-    "1": "emovies",
-    "2": "ausjal",
+    "1": "Emovies",
+    "2": "Ausjal",
 }
 
 APP_COUNTRIES = {
@@ -289,10 +289,3 @@ APP_CATALOG_MAP: dict[str, dict[str, str]] = {
 
 def catalogValues(catalog: str) -> list[str]:
     return sorted(set(APP_CATALOG_MAP[catalog].values()))
-
-def courseSourceId(sourceName: str) -> Optional[int]:
-    normalizedName = sourceName.lower()
-    for sourceId, name in APP_COURSE_SOURCES.items():
-        if name.lower() == normalizedName:
-            return int(sourceId)
-    return None
