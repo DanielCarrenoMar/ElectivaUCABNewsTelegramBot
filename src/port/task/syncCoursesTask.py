@@ -5,13 +5,11 @@ from dotenv import load_dotenv
 
 from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
 from src.infraestructure.repositoryImp.emoviesCoursesRepositoryImp import EmoviesCoursesRepositoryImp
+from src.port.task.task import log_task_duration
 
 
-def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-    )
+@log_task_duration
+def syncCoursesTask():
     load_dotenv()
 
     if not os.getenv("DB_URL"):
@@ -25,4 +23,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    syncCoursesTask()

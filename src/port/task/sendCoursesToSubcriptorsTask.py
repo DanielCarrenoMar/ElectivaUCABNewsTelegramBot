@@ -6,13 +6,11 @@ from telebot import TeleBot
 
 from src.aplication.sendCourseToSubcriptorsUseCase import SendCourseToSubcriptorsUseCase
 from src.infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
+from src.port.task.task import log_task_duration
 
 
-def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-    )
+@log_task_duration
+def sendCoursesToSubcriptorsTask():
     load_dotenv()
 
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
@@ -30,4 +28,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sendCoursesToSubcriptorsTask()
