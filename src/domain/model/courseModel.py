@@ -1,44 +1,11 @@
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 DESCRIPTION_MAX_LENGTH = 400
 
 _PENDING = "Por definir"
-
-
-def _textOrPending(value: str) -> str:
-    return value.strip() if value and value.strip() else _PENDING
-
-
-def _dateOrPending(value: Optional[date]) -> str:
-    if value is None or value == date.min:
-        return _PENDING
-    return value.strftime("%Y-%m-%d")
-
-
-def _numberOrPending(value: Optional[int]) -> str:
-    if value is None or value == 0:
-        return _PENDING
-    return str(value)
-
-
-def _dateRange(start: Optional[date], end: Optional[date]) -> str:
-    startLabel = _dateOrPending(start)
-    endLabel = _dateOrPending(end)
-    if startLabel == _PENDING and endLabel == _PENDING:
-        return _PENDING
-    return f"{startLabel} - {endLabel}"
-
-
-def _truncate(description: Optional[str]) -> str:
-    text = (description or "").strip()
-    if not text:
-        return _PENDING
-    if len(text) > DESCRIPTION_MAX_LENGTH:
-        return text[:DESCRIPTION_MAX_LENGTH].rstrip() + "…"
-    return text
 
 
 class CourseModel(BaseModel):
@@ -78,18 +45,65 @@ class ShowCourseModel(BaseModel):
     slots: Optional[int] = None
     modifiedDate: Optional[date] = None
 
+    classDateRange: Optional[str] = None
+    inscriptionDateRange: Optional[str] = None
+
+    @field_validator("source", "university", "country", "language", "disciplinaryField", "courseLevel", "title")
+    @classmethod
+    def _formatText(cls, value: Optional[str]) -> Optional[str]:
+        return value.strip() if value and value.strip() else None
+
+    @field_validator("startClassDate", "endClassDate", "startInscriptionDate", "endInscriptionDate", "modifiedDate")
+    @classmethod
+    def _formatDate(cls, value: Optional[date]) -> Optional[str]:
+        if value is None or value == date.min:
+            return None
+        return value.strftime("%Y-%m-%d")
+
+    @field_validator("studyHours", "slots")
+    @classmethod
+    def _formatNumber(cls, value: Optional[int]) -> Optional[str]:
+        if value is None or value == 0:
+            return None
+        return str(value)
+
+    @field_validator("description")
+    @classmethod
+    def _formatDescription(cls, value: Optional[str]) -> Optional[str]:
+        text = (value or "").strip()
+        if not text:
+            return None
+        if len(text) > DESCRIPTION_MAX_LENGTH:
+            return text[:DESCRIPTION_MAX_LENGTH].rstrip() + "…"
+        return text
+
+    @model_validator(mode="after")
+    def _formatRanges(self) -> "ShowCourseModel":
+        def _dateRange(startLabel: Optional[str], endLabel: Optional[str]) -> Optional[str]:
+            if startLabel is None and endLabel is None:
+                return None
+            if startLabel is None:
+                return endLabel
+            if endLabel is None:
+                return startLabel
+            return f"{startLabel} - {endLabel}"
+
+        self.classDateRange = _dateRange(self.startClassDate, self.endClassDate)
+        self.inscriptionDateRange = _dateRange(self.startInscriptionDate, self.endInscriptionDate)
+        return self
+
     def buildMessage(self) -> str:
         lines = [
             f"<b>{self.title or _PENDING}</b>",
-            f"🔗 <a href=\"{self.url}\">Ver curso</a>" if self.url else "",
-            f"🏛️ Universidad: {_textOrPending(self.university)}",
-            f"🌍 País: {_textOrPending(self.country)}",
-            f"🗣️ Idioma: {_textOrPending(self.language)}",
-            f"📅 Clases: {_dateRange(self.startClassDate, self.endClassDate)}",
-            f"📝 Inscripción: {_dateRange(self.startInscriptionDate, self.endInscriptionDate)}",
-            f"⏱️ Horas de estudio: {_numberOrPending(self.studyHours)}",
-            f"👥 Cupos: {_numberOrPending(self.slots)}",
+            f"  🔗 <a href=\"{self.url}\">Ver curso</a>" if self.url else "",
+            f"  🏛️ Universidad: {self.university}" if self.university else "",
+            f"  🌍 País: {self.country}" if self.country else "",
+            f"  🗣️ Idioma: {self.language}" if self.language else "",
+            f"  📅 Clases: {self.classDateRange}" if self.classDateRange else "",
+            f"  📝 Inscripción: {self.inscriptionDateRange}" if self.inscriptionDateRange else "",
+            f"  ⏱️ Horas de estudio: {self.studyHours}" if self.studyHours else "",
+            f"  👥 Cupos: {self.slots}" if self.slots else "",
             "",
-            _truncate(self.description),
+            self.description or "",
         ]
         return "\n".join(line for line in lines if line)
