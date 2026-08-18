@@ -151,9 +151,11 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                         if not modified_date:
                             modified_date = startClassDate or date.today()
 
+                        title = titleCell.get_text(strip=True) if titleCell else None
+
                         courses.append(
                             AusjalCourseDto(
-                                title=titleCell.get_text(strip=True) if titleCell else None,
+                                title=title,
                                 courseLevels=courseLevelCell.get_text(strip=True) if courseLevelCell else None,
                                 url="https://intercampusausjal.com/asignaturas-virtuales/",
                                 documentUrl=documentUrl,
@@ -174,6 +176,11 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                             )
                         )
 
+                        logger.info(
+                            "Extracted course: title='%s', total courses=%d",
+                            title,
+                            len(courses),
+                        )
         return courses
 
     def _parseDate(self, date_string: Optional[str]) -> Optional[date]:
