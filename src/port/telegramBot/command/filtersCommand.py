@@ -10,7 +10,6 @@ from src.domain.model.chatConfigModel import ChatConfig
 
 FILTER_CATALOGS: dict[str, tuple[str, dict[str, str]]] = {
     "country": ("🌍 País", APP_COUNTRIES),
-    "university": ("🎓 Universidad", APP_UNIVERSITIES),
     "language": ("🗣️ Idioma", APP_LANGUAGES),
     "course_level": ("📚 Nivel del curso", APP_COURSE_LEVELS),
     "disciplinary_field": ("🧠 Área disciplinaria", APP_DISCIPLINARY_FIELDS),
