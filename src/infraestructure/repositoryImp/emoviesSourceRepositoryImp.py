@@ -89,14 +89,14 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
                 browser_count = EmoviesSourceRepositoryImp.DEFAULT_BROWSER_COUNT
         return max(1, browser_count)
 
-    def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
+    def getCourses(self, filters: CourseFilters, max: Optional[int] = None) -> List[CourseModel]:
         apiParams = self._buildApiParams(filters)
         if self._browser_count > 1:
-            pagesData = self._fetchAllCoursesParallel(apiParams)
+            pagesData = self._fetchAllCoursesParallel(apiParams, max)
         else:
             try:
                 self._startBrowser()
-                pagesData = self._fetchAllCourses(apiParams)
+                pagesData = self._fetchAllCourses(apiParams, max)
             finally:
                 self._stopBrowser()
 
@@ -147,6 +147,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
     def _fetchAllCourses(
         self,
         apiParams: EmovieApiParamsDto,
+        max: Optional[int] = None,
     ) -> Optional[List[EmovieApiDataDto]]:
         firstPageData = self._fetchPage(apiParams, 1)
         if firstPageData is None:
@@ -156,7 +157,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
             return None
 
         coursesPayload = firstPageData.courses
-        maxNumPages = (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
+        maxNumPages = max // 12 or (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
         logger.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
 
         # La lista arranca con la primera página ya incluida; se consultan las restantes.
@@ -174,6 +175,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
     def _fetchAllCoursesParallel(
         self,
         apiParams: EmovieApiParamsDto,
+        max: Optional[int] = None,
     ) -> Optional[List[EmovieApiDataDto]]:
         """Obtiene todas las páginas con hasta browser_count navegadores en paralelo.
 

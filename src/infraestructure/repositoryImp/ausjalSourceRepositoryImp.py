@@ -38,12 +38,12 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
     SOURCE_URL = "https://cursos.iberoleon.mx/intercambiovirtual/index-icv.php"
     REQUEST_TIMEOUT_SECONDS = 30
 
-    def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
+    def getCourses(self, filters: CourseFilters, max: Optional[int] = None) -> List[CourseModel]:
         logger.info("getCourses: obteniendo cursos de AUSJAL desde %s", self.SOURCE_URL)
         response = requests.get(self.SOURCE_URL, timeout=self.REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
         logger.info("getCourses: respuesta recibida de AUSJAL, procesando HTML")
-        courseDtos = self.extractCourses(response.text)
+        courseDtos = self.extractCourses(response.text, max)
         courses: List[CourseModel] = []
 
         for courseDto in courseDtos:
@@ -63,7 +63,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
         logger.info("getCourses devolvió %d cursos de AUSJAL", len(courses))
         return courses
 
-    def extractCourses(self, html: str) -> List[AusjalCourseDto]:
+    def extractCourses(self, html: str, max: Optional[int] = None) -> List[AusjalCourseDto]:
         soup = BeautifulSoup(html, "html.parser")
         courses: List[AusjalCourseDto] = []
 
@@ -159,6 +159,10 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                                 modifiedDate=modified_date,
                             )
                         )
+
+                        if max is not None and len(courses) > max:
+                            logger.info("Se alcanzó el límite máximo de cursos (%d); se detiene la extracción", max)
+                            return courses
 
                         logger.info(
                             "Extracted course: title='%s', total courses=%d",

@@ -20,5 +20,5 @@ class CourseFilters(BaseModel):
 
 class CourseSourceRepository(ABC):
     @abstractmethod
-    def getCourses(self, filters: CourseFilters) -> List[CourseModel]:
+    def getCourses(self, filters: CourseFilters, max: Optional[int] = None) -> List[CourseModel]:
         raise NotImplementedError
