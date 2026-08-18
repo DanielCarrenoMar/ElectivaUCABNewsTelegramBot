@@ -9,8 +9,6 @@ class SyncCoursesUseCase:
     def execute(self) -> int:
         courses = self._courseRepository.getCourses(CourseFilters())
 
-        self._databaseRepository.deleteAllCourses()
-
         inserted = self._databaseRepository.saveCourses(courses)
 
         return inserted
