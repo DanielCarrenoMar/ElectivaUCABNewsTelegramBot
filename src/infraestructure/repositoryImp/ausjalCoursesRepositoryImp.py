@@ -38,7 +38,7 @@ _ALL_DATES_REGEX = re.compile(
 )
 
 
-class AusjalCoursesRepositoryImp(CourseSourceRepository):
+class AusjalSourceRepositoryImp(CourseSourceRepository):
     SOURCE_URL = "https://cursos.iberoleon.mx/intercambiovirtual/index-icv.php"
     REQUEST_TIMEOUT_SECONDS = 30
 
@@ -88,7 +88,7 @@ class AusjalCoursesRepositoryImp(CourseSourceRepository):
         soup = BeautifulSoup(html, "html.parser")
         courses: List[AusjalCourseDto] = []
 
-        for countryItem in soup.select("div.accordion-item"):
+        for countryItem in soup.select("div.accordion-item").slice(5):
             countryHeader = countryItem.find("h4")
             uni_countries = countryHeader.get_text(strip=True) if countryHeader else None
 

@@ -16,7 +16,7 @@ from src.infraestructure.dto.emovies.emovieApiResponseDto import (
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
 from src.infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCourseModels, parseApiDatetime
 
-class EmoviesCoursesRepositoryImp(CourseSourceRepository):
+class EmoviesSourceRepositoryImp(CourseSourceRepository):
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
     REQUEST_TIMEOUT_SECONDS = 30
     NO_FILTER_VALUE = "NaN"
@@ -59,11 +59,11 @@ class EmoviesCoursesRepositoryImp(CourseSourceRepository):
     def _buildApiParams(self, filters: CourseFilters) -> EmovieApiParamsDto:
         return EmovieApiParamsDto(
             uni_search=filters.keyword or "",
-            course_levels="86" or self.NO_FILTER_VALUE,
+            course_levels=filters.educationLevel or self.NO_FILTER_VALUE,
             uni_countries=filters.country or self.NO_FILTER_VALUE,
             uni_languages=filters.language or self.NO_FILTER_VALUE,
             course_university=filters.university or self.NO_FILTER_VALUE,
-            disciplinary_field="265"
+            disciplinary_field=filters.disciplinaryField or self.NO_FILTER_VALUE,
         )
 
     def _fetchAllCourses(
@@ -76,7 +76,7 @@ class EmoviesCoursesRepositoryImp(CourseSourceRepository):
         logging.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
 
         coursesById: dict[int, EmovieApiCourseDto] = {}
-        for page in range(1, maxNumPages + 1):
+        for page in range(1,2):
             pageData = firstPageData if page == 1 else self._fetchPage(apiParams, page)
             for courseDto in (pageData.courses.posts if pageData.courses else []) or []:
                 if courseDto.ID is not None:
@@ -90,7 +90,6 @@ class EmoviesCoursesRepositoryImp(CourseSourceRepository):
         pageParams = {**apiParams.model_dump(), "page": str(page)}
         response = requests.get(self.API_URL, params=pageParams, timeout=self.REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
-
         payload = EmovieApiResponseDto.model_validate(response.json())
         if not payload.success:
             logging.warning("La API de eMOVIES respondió success=false en la página %d", page)
