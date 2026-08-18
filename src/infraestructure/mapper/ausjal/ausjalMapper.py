@@ -1,4 +1,3 @@
-from src.config.defaultValuesCatalog import courseSourceId
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.ausjal.ausjalCourseDto import AusjalCourseDto
 from src.infraestructure.mapper.ausjal.ausjalCatalogTranslator import ausjalTextToAppIdCatalog
