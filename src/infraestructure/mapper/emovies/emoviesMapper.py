@@ -1,10 +1,12 @@
 from datetime import date, datetime
+from pathlib import Path
 from typing import Optional, Union
 
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
 from src.infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
+from src.infraestructure.mapper.emovies.emoviesHtmlTagTraductor import emoviesHtmlTagToAppIdCatalog
 
 from bs4 import BeautifulSoup
 
@@ -58,11 +60,11 @@ def _extractHtmlData(html:str):
 
         for cardClass in cardClassz:
             if cardClass.startswith("course_disciplinary_new"):
-                diciplinary = cardClass.split("-")[1]
+                diciplinary = "-".join(cardClass.split("-")[1:])
             elif cardClass.startswith("course_level"):
-                level = cardClass.split("-")[1]
+                level = "-".join(cardClass.split("-")[1:])
             elif cardClass.startswith("university_language"):
-                language = cardClass.split("-")[1]
+                language = "-".join(cardClass.split("-")[1:])      
 
         cardsInfo.append((diciplinary, level, language))
 
@@ -90,10 +92,9 @@ def emovieResponseToCourseModels(
             break
         courseModels[i] = courseModels[i].model_copy(
             update={
-                # TODO: traducir los slugs del HTML a IDs de catálogo
-                "disciplinaryField": None,
-                "courseLevel": None,
-                "language": None,
+                "disciplinaryField": emoviesHtmlTagToAppIdCatalog("disciplinary_fields", disciplinary),
+                "courseLevel": emoviesHtmlTagToAppIdCatalog("course_levels", level),
+                "language": emoviesHtmlTagToAppIdCatalog("languages", language),
             }
         )
 
