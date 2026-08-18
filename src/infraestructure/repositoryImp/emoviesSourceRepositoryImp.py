@@ -157,7 +157,8 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
             return None
 
         coursesPayload = firstPageData.courses
-        maxNumPages = max // 12 or (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
+        maxtoMaxPages = max // 12 if max is not None else None
+        maxNumPages = maxtoMaxPages or (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
         logger.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
 
         # La lista arranca con la primera página ya incluida; se consultan las restantes.
