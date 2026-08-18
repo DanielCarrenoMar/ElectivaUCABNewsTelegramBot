@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class AusjalCourseDto(BaseModel):
     title: Optional[str] = None
+    url: Optional[str] = None
     documentUrl: Optional[str] = None
     uniCountries: Optional[str] = None
     disciplinaryField: Optional[str] = None

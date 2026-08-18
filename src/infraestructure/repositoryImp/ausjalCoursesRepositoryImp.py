@@ -27,11 +27,6 @@ _SPANISH_MONTHS = {
     "diciembre": 12,
 }
 
-_NUMERIC_DATE_REGEX = re.compile(r"\d{1,2}/(\d{1,2})/(\d{4})")
-_SPANISH_DATE_REGEX = re.compile(
-    r"(\d{1,2})\s+de\s+([A-Za-záéíóúñü]+)(?:\s+(?:de|del)\s+)?(\d{4})",
-    re.IGNORECASE,
-)
 _ALL_DATES_REGEX = re.compile(
     r"\b\d{1,2}/\d{1,2}/\d{4}\b|\b\d{1,2}\s+de\s+[A-Za-záéíóúñü]+(?:\s+(?:de|del)\s+)?\d{4}\b",
     re.IGNORECASE,
@@ -158,6 +153,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                         courses.append(
                             AusjalCourseDto(
                                 title=titleCell.get_text(strip=True) if titleCell else None,
+                                url="https://intercampusausjal.com/asignaturas-virtuales/",
                                 documentUrl=documentUrl,
                                 uniCountries=uni_countries,
                                 disciplinaryField=disciplinaryFieldCell.get_text(strip=True)
