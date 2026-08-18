@@ -24,13 +24,13 @@ def syncCoursesTask():
     emoviesSourceRepository = EmoviesSourceRepositoryImp()
     ausjalSourceRepository = AusjalSourceRepositoryImp()
     emoviesSyncCoursesUseCase = SyncCoursesUseCase(emoviesSourceRepository)
-    ausjalSyncCoursesUseCase = SyncCoursesUseCase(ausjalSourceRepository)
+    #ausjalSyncCoursesUseCase = SyncCoursesUseCase(ausjalSourceRepository)
 
     insertedEmovies = emoviesSyncCoursesUseCase.execute()
     logging.info("syncCoursesTask: sincronización con emovies completada con %d cursos", insertedEmovies)
 
-    insertedAusjal = ausjalSyncCoursesUseCase.execute()
-    logging.info("syncCoursesTask: sincronización con ausjal completada con %d cursos", insertedAusjal)
+    #insertedAusjal = ausjalSyncCoursesUseCase.execute()
+    #logging.info("syncCoursesTask: sincronización con ausjal completada con %d cursos", insertedAusjal)
 
 
 if __name__ == "__main__":

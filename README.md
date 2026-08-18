@@ -30,7 +30,7 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 ## Requisitos
 
 - Python 3.11+
-- Dependencias de `requirements.txt`
+- Dependencias de `requirements-scraper.txt` (incluye `requirements.txt` base)
 - Token de bot de Telegram
 
 ## Variables de entorno
@@ -44,7 +44,8 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 1. Instalar dependencias:
 
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-scraper.txt
+   playwright install chromium 
    ```
 
 2. Colocar variables de entorno.
