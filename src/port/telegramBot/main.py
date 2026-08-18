@@ -3,7 +3,7 @@ import os
 from telebot import TeleBot
 from dotenv import load_dotenv, get_key
 import logging
-from src.port.telegramBot.command import startCommand, helpCommand, unknownCommand, subscribeCommand, unsubscribeCommand
+from src.port.telegramBot.command import startCommand, helpCommand, unknownCommand, subscribeCommand, unsubscribeCommand, filtersCommand
 
 def main():
     logging.basicConfig(
@@ -23,6 +23,7 @@ def main():
     helpCommand.register(bot)
     subscribeCommand.register(bot)
     unsubscribeCommand.register(bot)
+    filtersCommand.register(bot)
     unknownCommand.register(bot)
 
     logging.info("telegramBot: bot iniciado y escuchando mensajes...")

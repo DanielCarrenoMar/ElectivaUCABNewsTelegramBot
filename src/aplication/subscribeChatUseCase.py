@@ -8,6 +8,7 @@ class SubscribeChatUseCase:
         self._databaseRepository = PostgresDatabaseRepositoryImp()
 
     def execute(self, chatId: int) -> None:
-        self._databaseRepository.getOrCreateChatConfig(chatId)
-        self._databaseRepository.updateChatSubscription(chatId, True)
+        config = self._databaseRepository.getOrCreateChatConfig(chatId)
+        config.isSubscribed = True
+        self._databaseRepository.updateChatConfig(config)
         logging.info("SubscribeChatUseCase: el chat %s se suscribió a las notificaciones", chatId)

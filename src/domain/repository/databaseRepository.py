@@ -41,9 +41,5 @@ class DatabaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def updateChatLastRevision(self, chatId: int, lastRevision: date) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def updateChatSubscription(self, chatId: int, subscribed: bool) -> None:
+    def updateChatConfig(self, chatConfig: ChatConfig) -> None:
         raise NotImplementedError

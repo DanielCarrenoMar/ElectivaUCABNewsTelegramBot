@@ -1,5 +1,4 @@
 import logging
-from datetime import date
 from typing import List, Optional
 
 from psycopg import sql
@@ -9,6 +8,7 @@ from src.domain.repository.databaseRepository import DatabaseCourseFilters, Data
 from src.domain.model.courseModel import ShowCourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.domain.model.courseModel import CourseModel
+from src.infraestructure.mapper.chatConfigMapper import chatConfigToChatConfigsDto
 from src.infraestructure.mapper.courseDtoMapper import courseModelToCoursesDto
 
 COURSES_SELECT_COLUMNS = [
@@ -70,7 +70,6 @@ CHAT_CONFIG_COLUMNS = [
     "course_levels",
     "key_word",
 ]
-
 
 class PostgresDatabaseRepositoryImp(DatabaseRepository):
     def deleteAllCourses(self) -> None:
@@ -206,31 +205,29 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         )
         return chatConfigs
 
-    def updateChatLastRevision(self, chatId: int, lastRevision: date) -> None:
+    def updateChatConfig(self, chatConfig: ChatConfig) -> None:
+        dto = chatConfigToChatConfigsDto(chatConfig)
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                sql.SQL("UPDATE chatconfigs SET lastrevision = %s WHERE id = %s"),
-                (lastRevision, chatId),
+                sql.SQL(
+                    "UPDATE chatconfigs SET is_subscribed = %s, lastrevision = %s, "
+                    "uni_countries = %s, disciplinary_field = %s, course_university = %s, "
+                    "uni_languages = %s, course_levels = %s, key_word = %s WHERE id = %s"
+                ),
+                (
+                    dto.is_subscribed,
+                    dto.last_revision,
+                    dto.uni_countries,
+                    dto.disciplinary_field,
+                    dto.course_university,
+                    dto.uni_languages,
+                    dto.course_levels,
+                    dto.key_word,
+                    dto.id,
+                ),
             )
-        logging.info(
-            "PostgresDatabaseRepositoryImp: lastrevision del chat %s actualizada a %s",
-            chatId,
-            lastRevision,
-        )
-
-    def updateChatSubscription(self, chatId: int, subscribed: bool) -> None:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute(
-                sql.SQL("UPDATE chatconfigs SET is_subscribed = %s WHERE id = %s"),
-                (subscribed, chatId),
-            )
-        logging.info(
-            "PostgresDatabaseRepositoryImp: suscripción del chat %s = %s",
-            chatId,
-            subscribed,
-        )
+        logging.info("PostgresDatabaseRepositoryImp: configuración del chat %s actualizada", chatConfig.id)
 
     def _fetchChatConfig(self, cursor, chatId: int) -> Optional[dict]:
         cursor.execute(

@@ -8,6 +8,7 @@ class UnsubscribeChatUseCase:
         self._databaseRepository = PostgresDatabaseRepositoryImp()
 
     def execute(self, chatId: int) -> None:
-        self._databaseRepository.getOrCreateChatConfig(chatId)
-        self._databaseRepository.updateChatSubscription(chatId, False)
+        config = self._databaseRepository.getOrCreateChatConfig(chatId)
+        config.isSubscribed = False
+        self._databaseRepository.updateChatConfig(config)
         logging.info("UnsubscribeChatUseCase: el chat %s se desuscribió de las notificaciones", chatId)

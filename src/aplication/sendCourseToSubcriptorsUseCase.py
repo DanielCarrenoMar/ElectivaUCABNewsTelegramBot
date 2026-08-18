@@ -55,7 +55,8 @@ class SendCourseToSubcriptorsUseCase:
             self._notifier.sendCourseToChat(chat.id, course)
             sent += 1
 
-        self._databaseRepository.updateChatLastRevision(chat.id, newest)
+        chat.lastRevision = newest
+        self._databaseRepository.updateChatConfig(chat)
 
         logging.info(
             "SendCourseToSubcriptorsUseCase: el chat %s recibió %d curso(s); lastrevision actualizada a %s",
