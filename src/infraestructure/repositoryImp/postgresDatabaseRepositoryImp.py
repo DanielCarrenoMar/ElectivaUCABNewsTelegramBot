@@ -8,7 +8,8 @@ from src.domain.model.chatConfigModel import ChatConfig
 from src.domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
 from src.domain.model.courseModel import ShowCourseModel
 from src.infraestructure.dbConnection import get_db_connection
-from src.infraestructure.dto.database.courseDto import CoursesDto
+from src.domain.model.courseModel import CourseModel
+from src.infraestructure.mapper.courseDtoMapper import courseModelToCoursesDto
 
 COURSES_SELECT_COLUMNS = [
     "c.id",
@@ -94,7 +95,8 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             cursor.execute(sql.SQL("DELETE FROM courses"))
         logging.info("PostgresDatabaseRepositoryImp: se eliminaron todos los cursos de la tabla courses")
 
-    def saveCourses(self, courses: List[CoursesDto]) -> int:
+    def saveCourses(self, courseModels: List[CourseModel]) -> int:
+        courses = [courseModelToCoursesDto(courseModels) for _ in courses]
         sourceId = self._getSourceId()
         connection = get_db_connection()
 

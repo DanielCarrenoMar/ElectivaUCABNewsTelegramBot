@@ -42,28 +42,23 @@ def _truncate(description: Optional[str]) -> str:
     return text
 
 
-class EducationLevelEnum(str, Enum):
-    UNDERGRADUATE = "undergraduate"
-    POSTGRADUATE = "postgraduate"
-
-
 class CourseModel(BaseModel):
-    title: str
-    educationLevel: EducationLevelEnum
+    title: Optional[str] = None
+    educationLevel: Optional[int] = None
     university: Optional[int] = None
-    url: str
+    url: str = None
     country: Optional[int] = None
     language: Optional[int] = None
     disciplinaryField: Optional[int] = None
     courseLevel: Optional[int] = None
-    startClassDate: date
-    endClassDate: date
-    startInscriptionDate: date
-    endInscriptionDate: date
-    description: str
-    studyHours: int
-    slots: int
-    modifiedDate: date = date.min
+    startClassDate: Optional[date] = None
+    endClassDate: Optional[date] = None
+    startInscriptionDate: Optional[date] = None
+    endInscriptionDate: Optional[date] = None
+    description: Optional[str] = None
+    studyHours: Optional[int] = None
+    slots: Optional[int] = None
+    modifiedDate: date
 
 
 class ShowCourseModel(BaseModel):

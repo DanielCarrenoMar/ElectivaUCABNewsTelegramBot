@@ -1,7 +1,6 @@
 import logging
 
 from src.domain.repository.courseRepository import CourseFilters, CourseSourceRepository
-from src.infraestructure.mapper.courseDtoMapper import courseModelToCoursesDto
 from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
@@ -15,6 +14,6 @@ class SyncCoursesUseCase:
 
         self._databaseRepository.deleteAllCourses()
 
-        inserted = self._databaseRepository.saveCourses([courseModelToCoursesDto(course) for course in courses])
+        inserted = self._databaseRepository.saveCourses(courses)
 
         return inserted
