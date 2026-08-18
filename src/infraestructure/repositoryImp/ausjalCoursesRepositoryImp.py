@@ -178,18 +178,17 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
 
     def _parseDate(self, date_string: Optional[str]) -> Optional[date]:
         if not date_string:
+            logger.debug("No se proporcionó una cadena de fecha para analizar.")
             return None
-
-        logger.debug("Intentando parsear la fecha: '%s'", date_string)
 
         text = date_string.strip()
         numericMatch = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
         if numericMatch:
             day, month, year = numericMatch.groups()
-            logger.debug("Parsed numeric date: day=%s, month=%s, year=%s", day, month, year)
             try:
                 return date(int(year), int(month), int(day))
             except ValueError:
+                logger.warning("Error al crear la fecha a partir de los valores: day=%s, month=%s, year=%s", day, month, year)
                 return None
 
         spanishMatch = re.fullmatch(
@@ -201,12 +200,13 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
             day = int(spanishMatch.group(1))
             month = _SPANISH_MONTHS.get(spanishMatch.group(2).lower())
             year = int(spanishMatch.group(3))
-            logger.debug("Parsed Spanish date: day=%d, month=%s, year=%d", day, month, year)
             if month is None:
+                logger.warning("Mes no válido: %s", spanishMatch.group(2))
                 return None
             try:
                 return date(year, month, day)
             except ValueError:
+                logger.warning("Error al crear la fecha a partir de los valores: day=%d, month=%s, year=%d", day, month, year)
                 return None
 
         return None
