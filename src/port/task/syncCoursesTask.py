@@ -4,8 +4,8 @@ import os
 from dotenv import load_dotenv
 
 from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
-from src.infraestructure.repositoryImp.emoviesCoursesRepositoryImp import EmoviesSourceRepositoryImp
-from src.infraestructure.repositoryImp.ausjalCoursesRepositoryImp import AusjalSourceRepositoryImp
+from src.infraestructure.repositoryImp.emoviesSourceRepositoryImp import EmoviesSourceRepositoryImp
+from src.infraestructure.repositoryImp.ausjalSourceRepositoryImp import AusjalSourceRepositoryImp
 from src.port.task.task import log_task_duration
 
 logging.basicConfig(
