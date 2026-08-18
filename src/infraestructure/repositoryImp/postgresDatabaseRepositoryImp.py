@@ -37,6 +37,7 @@ CATALOG_JOINS = [
     ("languages", "language", "language_name", "c.uni_languages"),
     ("course_levels", "course_level", "course_level_name", "c.course_levels"),
     ("disciplinary_fields", "disciplinary_field", "disciplinary_field_name", "c.disciplinary_field"),
+    ("courses_sources", "source", "source_name", "c.source_id"),
 ]
 
 COURSES_COLUMNS = [
@@ -72,23 +73,6 @@ CHAT_CONFIG_COLUMNS = [
 
 
 class PostgresDatabaseRepositoryImp(DatabaseRepository):
-    def __init__(self):
-        self._emoviesSourceId: Optional[int] = None
-
-    def _getSourceId(self) -> int:
-        if self._emoviesSourceId is None:
-            connection = get_db_connection()
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    sql.SQL("SELECT id FROM courses_sources WHERE source = %s"),
-                    ("emovies",),
-                )
-                row = cursor.fetchone()
-                if row is None:
-                    raise RuntimeError("No se encontró la fuente 'emovies' en courses_sources")
-                self._emoviesSourceId = row["id"]
-        return self._emoviesSourceId
-
     def deleteAllCourses(self) -> None:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -97,7 +81,6 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
 
     def saveCourses(self, courseModels: List[CourseModel]) -> int:
         courses = [courseModelToCoursesDto(course) for course in courseModels]
-        sourceId = self._getSourceId()
         connection = get_db_connection()
 
         insertQuery = sql.SQL(
@@ -109,7 +92,7 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
 
         with connection.cursor() as cursor:
             for course in courses:
-                cursor.execute(insertQuery, self._courseToRow(sourceId, course))
+                cursor.execute(insertQuery, self._courseToRow(course))
 
         logging.info("PostgresDatabaseRepositoryImp: se insertaron %d cursos en la tabla courses", len(courses))
         return len(courses)
@@ -172,6 +155,7 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
 
     def _rowToShowCourseModel(self, row: dict) -> ShowCourseModel:
         return ShowCourseModel(
+            source=row.get("source_name"),
             title=row.get("title"),
             university=row.get("university_name"),
             url=row.get("url"),
@@ -272,9 +256,9 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             keyWord=keyWord,
         )
 
-    def _courseToRow(self, sourceId: int, dto: CoursesDto) -> tuple:
+    def _courseToRow(self, dto: CoursesDto) -> tuple:
         return (
-            sourceId,
+            dto.source_id,
             dto.title,
             dto.url,
             dto.uni_countries,

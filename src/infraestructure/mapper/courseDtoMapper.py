@@ -4,6 +4,7 @@ from src.infraestructure.dto.database.courseDto import CoursesDto
 
 def courseModelToCoursesDto(course: CourseModel) -> CoursesDto:
     return CoursesDto(
+        source_id=course.sourceId,
         title=course.title,
         url=course.url,
         uni_countries=course.country,

@@ -42,6 +42,7 @@ def _truncate(description: Optional[str]) -> str:
 
 
 class CourseModel(BaseModel):
+    sourceId: int = None
     title: Optional[str] = None
     courseLevel: Optional[int] = None
     university: Optional[int] = None
@@ -60,6 +61,7 @@ class CourseModel(BaseModel):
 
 
 class ShowCourseModel(BaseModel):
+    source: Optional[str] = None
     university: Optional[str] = None
     country: Optional[str] = None
     language: Optional[str] = None

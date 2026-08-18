@@ -1,3 +1,10 @@
+from typing import Optional
+
+APP_COURSE_SOURCES: dict[str, str] = {
+    "1": "emovies",
+    "2": "ausjal",
+}
+
 APP_COUNTRIES = {
     "1": "Argentina",
     "2": "Bolivia",
@@ -277,7 +284,15 @@ APP_CATALOG_MAP: dict[str, dict[str, str]] = {
     "languages": APP_LANGUAGES,
     "course_levels": APP_COURSE_LEVELS,
     "disciplinary_fields": APP_DISCIPLINARY_FIELDS,
+    "course_sources": APP_COURSE_SOURCES,
 }
 
 def catalogValues(catalog: str) -> list[str]:
     return sorted(set(APP_CATALOG_MAP[catalog].values()))
+
+def courseSourceId(sourceName: str) -> Optional[int]:
+    normalizedName = sourceName.lower()
+    for sourceId, name in APP_COURSE_SOURCES.items():
+        if name.lower() == normalizedName:
+            return int(sourceId)
+    return None

@@ -1,9 +1,11 @@
+from src.config.defaultValuesCatalog import courseSourceId
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.ausjal.ausjalCourseDto import AusjalCourseDto
 from src.infraestructure.mapper.ausjal.ausjalCatalogTranslator import ausjalTextToAppIdCatalog
 
 def ausjalCourseDtoToCourseModel(dto: AusjalCourseDto) -> CourseModel:
     return CourseModel(
+        sourceId=courseSourceId("ausjal"),
         title=dto.title,
         courseLevel=ausjalTextToAppIdCatalog("education_levels", dto.courseLevels),
         university=ausjalTextToAppIdCatalog("universities", dto.courseUniversity),

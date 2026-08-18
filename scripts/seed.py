@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from src.config.defaultValuesCatalog import catalogValues
+from src.config.defaultValuesCatalog import APP_COURSE_SOURCES, catalogValues
 
 load_dotenv()
 
@@ -77,8 +77,8 @@ INSERT_CATALOG_VALUE = """
 INSERT INTO {table} ({value_column}) VALUES (%s) ON CONFLICT ({value_column}) DO NOTHING
 """
 
-INSERT_EMOVIES_SOURCE = """
-INSERT INTO courses_sources (source) VALUES ('emovies')
+INSERT_COURSE_SOURCE = """
+INSERT INTO courses_sources (source) VALUES (%s)
 ON CONFLICT (source) DO NOTHING
 """
 
@@ -91,7 +91,9 @@ def create_tables():
             cursor.execute(CREATE_CHAT_CONFIGS_TABLE)
             cursor.execute(CREATE_COURSES_SOURCES_TABLE)
             cursor.execute(CREATE_COURSES_TABLE)
-            cursor.execute(INSERT_EMOVIES_SOURCE)
+
+            for sourceName in APP_COURSE_SOURCES.values():
+                cursor.execute(INSERT_COURSE_SOURCE, (sourceName,))
 
             for table, value_column in CATALOG_TABLES.items():
                 values = catalogValues(table)

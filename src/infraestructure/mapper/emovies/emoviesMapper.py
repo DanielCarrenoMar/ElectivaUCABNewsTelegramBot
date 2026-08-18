@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from typing import Optional, Union
 
+from src.config.defaultValuesCatalog import courseSourceId
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
@@ -77,6 +78,7 @@ def emovieResponseToCourseModels(
 
     courseModels: list[CourseModel] = [
         CourseModel(
+            sourceId=courseSourceId("emovies"),
             title=course.post_title,
             url=_courseUrl(course),
             modifiedDate=_courseModifiedDate(course),
