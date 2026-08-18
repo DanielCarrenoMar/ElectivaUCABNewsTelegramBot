@@ -101,7 +101,6 @@ def emovieResponseToCourseModels(
 
     courseModels: list[CourseModel] = [
         CourseModel(
-            externalId=course.ID,
             title=course.post_title,
             url=_courseUrl(course),
             modifiedDate=_courseModifiedDate(course),

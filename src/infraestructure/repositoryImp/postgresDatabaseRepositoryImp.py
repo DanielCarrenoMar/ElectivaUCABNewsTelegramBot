@@ -13,7 +13,6 @@ from src.infraestructure.dto.database.courseDto import CoursesDto
 COURSES_SELECT_COLUMNS = [
     "c.id",
     "c.source_id",
-    "c.external_id",
     "c.title",
     "c.url",
     "c.uni_countries",
@@ -41,7 +40,6 @@ CATALOG_JOINS = [
 
 COURSES_COLUMNS = [
     "source_id",
-    "external_id",
     "title",
     "url",
     "uni_countries",
@@ -275,7 +273,6 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
     def _courseToRow(self, sourceId: int, dto: CoursesDto) -> tuple:
         return (
             sourceId,
-            dto.external_id,
             dto.title,
             dto.url,
             dto.uni_countries,

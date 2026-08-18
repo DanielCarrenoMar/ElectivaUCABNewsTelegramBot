@@ -109,7 +109,6 @@ El script `scripts/seed.py` inserta los valores en `countries`, `course_levels` 
 |---|---|---|
 | id | SERIAL | PK |
 | source_id | INT | FK → `courses_sources(id)` |
-| external_id | INT | ID del curso en la fuente |
 | title | VARCHAR(255) | Título |
 | url | TEXT | URL del curso |
 | uni_countries | INT | FK → `countries(id)` |

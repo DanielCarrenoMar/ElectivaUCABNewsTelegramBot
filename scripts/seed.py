@@ -55,7 +55,6 @@ CREATE_COURSES_TABLE = """
 CREATE TABLE IF NOT EXISTS courses (
     id SERIAL PRIMARY KEY,
     source_id INT REFERENCES courses_sources(id),
-    external_id INT,
     title VARCHAR(255),
     url TEXT,
     uni_countries INT REFERENCES countries(id),

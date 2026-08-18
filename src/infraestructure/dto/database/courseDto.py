@@ -7,7 +7,6 @@ from pydantic import BaseModel
 class CoursesDto(BaseModel):
     id: Optional[int] = None
     source_id: Optional[int] = None
-    external_id: Optional[int] = None
     title: Optional[str] = None
     url: Optional[str] = None
     uni_countries: Optional[int] = None        # FK countries.id

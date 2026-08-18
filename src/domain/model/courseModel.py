@@ -48,7 +48,6 @@ class EducationLevelEnum(str, Enum):
 
 
 class CourseModel(BaseModel):
-    externalId: Optional[int] = None
     title: str
     educationLevel: EducationLevelEnum
     university: Optional[int] = None
