@@ -83,7 +83,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
         soup = BeautifulSoup(html, "html.parser")
         courses: List[AusjalCourseDto] = []
 
-        for countryItem in soup.select("div.accordion-item", limit=5):
+        for countryItem in soup.select("div.accordion-item"):
             countryHeader = countryItem.find("h4")
             uni_countries = countryHeader.get_text(strip=True) if countryHeader else None
 
