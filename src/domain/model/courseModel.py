@@ -1,5 +1,4 @@
 from datetime import date
-from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel
@@ -44,13 +43,12 @@ def _truncate(description: Optional[str]) -> str:
 
 class CourseModel(BaseModel):
     title: Optional[str] = None
-    educationLevel: Optional[int] = None
+    courseLevel: Optional[int] = None
     university: Optional[int] = None
     url: str = None
     country: Optional[int] = None
     language: Optional[int] = None
     disciplinaryField: Optional[int] = None
-    courseLevel: Optional[int] = None
     startClassDate: Optional[date] = None
     endClassDate: Optional[date] = None
     startInscriptionDate: Optional[date] = None

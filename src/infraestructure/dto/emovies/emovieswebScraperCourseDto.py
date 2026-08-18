@@ -6,7 +6,7 @@ from pydantic import BaseModel
 class EmoviesWebScraperCourseDto(BaseModel):
     country: Optional[str] = None
     language: Optional[str] = None
-    educationLevel: Optional[str] = None
+    courseLevel: Optional[str] = None
     startClassDate: Optional[date] = None
     endClassDate: Optional[date] = None
     startInscriptionDate: Optional[date] = None

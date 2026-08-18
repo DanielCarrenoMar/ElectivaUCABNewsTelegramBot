@@ -61,7 +61,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
     def _buildApiParams(self, filters: CourseFilters) -> EmovieApiParamsDto:
         return EmovieApiParamsDto(
             uni_search=filters.keyword or "",
-            course_levels=filters.educationLevel or self.NO_FILTER_VALUE,
+            course_levels=filters.courseLevel or self.NO_FILTER_VALUE,
             uni_countries=filters.country or self.NO_FILTER_VALUE,
             uni_languages=filters.language or self.NO_FILTER_VALUE,
             course_university=filters.university or self.NO_FILTER_VALUE,

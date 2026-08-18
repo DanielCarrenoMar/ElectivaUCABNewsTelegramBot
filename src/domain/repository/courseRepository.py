@@ -9,7 +9,7 @@ from src.domain.model.courseModel import CourseModel
 
 class CourseFilters(BaseModel):
     keyword: Optional[str] = None
-    educationLevel: Optional[str] = None
+    courseLevel: Optional[str] = None
     country: Optional[str] = None
     language: Optional[str] = None
     disciplinaryField: Optional[str] = None

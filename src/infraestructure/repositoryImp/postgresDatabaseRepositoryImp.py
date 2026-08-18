@@ -96,7 +96,7 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         logging.info("PostgresDatabaseRepositoryImp: se eliminaron todos los cursos de la tabla courses")
 
     def saveCourses(self, courseModels: List[CourseModel]) -> int:
-        courses = [courseModelToCoursesDto(courseModels) for _ in courses]
+        courses = [courseModelToCoursesDto(course) for course in courseModels]
         sourceId = self._getSourceId()
         connection = get_db_connection()
 

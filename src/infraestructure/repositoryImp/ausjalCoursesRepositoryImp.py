@@ -32,6 +32,7 @@ _ALL_DATES_REGEX = re.compile(
     re.IGNORECASE,
 )
 
+logger = logging.getLogger("AusjalSourceRepositoryImp")
 
 class AusjalSourceRepositoryImp(CourseSourceRepository):
     SOURCE_URL = "https://cursos.iberoleon.mx/intercambiovirtual/index-icv.php"
@@ -48,7 +49,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
             courseModel = ausjalCourseDtoToCourseModel(courseDto)
 
             if filters.minStudyHours is not None and courseModel.studyHours < filters.minStudyHours:
-                logging.debug(
+                logger.debug(
                     "Curso '%s' descartado: studyHours %d < minStudyHours %d",
                     courseModel.title,
                     courseModel.studyHours,
@@ -57,7 +58,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                 continue
 
             if filters.keyword is not None and filters.keyword.lower() not in courseModel.title.lower():
-                logging.debug(
+                logger.debug(
                     "Curso '%s' descartado: no contiene keyword '%s'",
                     courseModel.title,
                     filters.keyword,
@@ -65,7 +66,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                 continue
 
             if filters.minModifiedDate is not None and courseModel.modifiedDate < filters.minModifiedDate:
-                logging.debug(
+                logger.debug(
                     "Curso '%s' descartado: modifiedDate %s < minModifiedDate %s",
                     courseModel.title,
                     courseModel.modifiedDate,
@@ -75,7 +76,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
 
             courses.append(courseModel)
 
-        logging.info("getCourses devolvió %d cursos de AUSJAL", len(courses))
+        logger.info("getCourses devolvió %d cursos de AUSJAL", len(courses))
         return courses
 
     def extractCourses(self, html: str) -> List[AusjalCourseDto]:
@@ -153,6 +154,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                         courses.append(
                             AusjalCourseDto(
                                 title=titleCell.get_text(strip=True) if titleCell else None,
+                                courseLevels=courseLevelCell.get_text(strip=True) if courseLevelCell else None,
                                 url="https://intercampusausjal.com/asignaturas-virtuales/",
                                 documentUrl=documentUrl,
                                 uniCountries=uni_countries,
@@ -160,10 +162,7 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                                 if disciplinaryFieldCell
                                 else None,
                                 courseUniversity=course_university,
-                                courseLevels=courseLevelCell.get_text(strip=True) if courseLevelCell else None,
-                                startClassDate=self._parseDate(
-                                    startClassCell.get_text(strip=True) if startClassCell else None
-                                ),
+                                startClassDate=startClassDate,
                                 endClassDate=self._parseDate(
                                     endClassCell.get_text(strip=True) if endClassCell else None
                                 ),
@@ -181,10 +180,13 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
         if not date_string:
             return None
 
+        logger.debug("Intentando parsear la fecha: '%s'", date_string)
+
         text = date_string.strip()
         numericMatch = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
         if numericMatch:
             day, month, year = numericMatch.groups()
+            logger.debug("Parsed numeric date: day=%s, month=%s, year=%s", day, month, year)
             try:
                 return date(int(year), int(month), int(day))
             except ValueError:
@@ -198,10 +200,12 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
         if spanishMatch:
             day = int(spanishMatch.group(1))
             month = _SPANISH_MONTHS.get(spanishMatch.group(2).lower())
+            year = int(spanishMatch.group(3))
+            logger.debug("Parsed Spanish date: day=%d, month=%s, year=%d", day, month, year)
             if month is None:
                 return None
             try:
-                return date(int(spanishMatch.group(3)), month, day)
+                return date(year, month, day)
             except ValueError:
                 return None
 

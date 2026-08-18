@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional, Union
 
-from src.domain.model.courseModel import CourseModel, EducationLevelEnum
+from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
 from src.infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
@@ -9,19 +9,6 @@ from src.infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesI
 from bs4 import BeautifulSoup
 
 COURSE_URL_BASE = "https://emovies.oui-iohe.org/nuestros-cursos/"
-
-DEFAULT_TITLE = "Sin título"
-DEFAULT_EDUCATION_LEVEL = EducationLevelEnum.UNDERGRADUATE
-DEFAULT_UNIVERSITY = ""
-DEFAULT_COUNTRY = ""
-DEFAULT_LANGUAGE = ""
-DEFAULT_DESCRIPTION = ""
-# Valores por defecto pendientes del scraper web: aún no se pueden rellenar
-# con la respuesta de la API, así que se asignan marcadores de posición.
-DEFAULT_DATE = date.min
-DEFAULT_STUDY_HOURS = 0
-DEFAULT_SLOTS = 0
-
 
 def parseApiDatetime(value: Optional[str]) -> Optional[date]:
     """Convierte una fecha de la API ('2026-05-12 09:14:21' o ISO) a date."""
@@ -39,17 +26,6 @@ def _courseUrl(apiCourseDto: EmovieApiCourseDto) -> str:
     if slug:
         return f"{COURSE_URL_BASE}{slug}"
     return apiCourseDto.guid or ""
-
-
-def _parseEducationLevel(value: Optional[str]) -> EducationLevelEnum:
-    if not value:
-        return DEFAULT_EDUCATION_LEVEL
-
-    try:
-        return EducationLevelEnum(value)
-    except ValueError:
-        return DEFAULT_EDUCATION_LEVEL
-
 
 def _courseModifiedDate(apiCourseDto: EmovieApiCourseDto) -> date:
     parsedDates = [
@@ -104,14 +80,6 @@ def emovieResponseToCourseModels(
             title=course.post_title,
             url=_courseUrl(course),
             modifiedDate=_courseModifiedDate(course),
-            educationLevel=DEFAULT_EDUCATION_LEVEL,
-            startClassDate=DEFAULT_DATE,
-            endClassDate=DEFAULT_DATE,
-            startInscriptionDate=DEFAULT_DATE,
-            endInscriptionDate=DEFAULT_DATE,
-            description=DEFAULT_DESCRIPTION,
-            studyHours=DEFAULT_STUDY_HOURS,
-            slots=DEFAULT_SLOTS,
         )
         for course in apiDataDto.courses.posts
     ]
