@@ -18,7 +18,7 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 ## Comandos del bot
 
 - `/start` inicia el bot en el chat.
-- `/help` muestra ayuda.
+- `/ayuda` muestra ayuda.
 - `/filters` permite ver y modificar los filtros activos.
 - `/resetfilters` vuelve a filtros por defecto.
 - `/check` consulta inmediatamente y notifica cursos nuevos.

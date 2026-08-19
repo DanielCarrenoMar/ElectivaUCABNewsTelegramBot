@@ -23,7 +23,7 @@ def _catalog_name(catalog: dict[str, str], filterId: Optional[int]) -> str:
 
 
 def _filters_text(config: ChatConfig) -> str:
-    lines = ["<b>🎯 Tus filtros actuales</b>"]
+    lines = ["<b>Tus filtros actuales</b>"]
     for filterKey, (label, catalog) in FILTER_CATALOGS.items():
         field = CHAT_CONFIG_FIELD_BY_FILTER[filterKey]
         lines.append(f"• {label}: {_catalog_name(catalog, getattr(config, field))}")
