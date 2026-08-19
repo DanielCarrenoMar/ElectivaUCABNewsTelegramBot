@@ -8,7 +8,7 @@ def courseModelToCoursesDto(course: CourseModel) -> CoursesDto:
         title=course.title,
         url=course.url,
         uni_countries=course.country,
-        disciplinary_field=course.disciplinaryField,
+        disciplinary_fields=course.disciplinaryFields,
         course_university=course.university,
         uni_languages=course.language,
         start_class_date=course.startClassDate,

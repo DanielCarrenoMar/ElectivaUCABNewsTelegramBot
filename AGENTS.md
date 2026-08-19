@@ -112,7 +112,6 @@ El script `scripts/seed.py` inserta los valores en `countries`, `course_levels` 
 | title | VARCHAR(255) | Título |
 | url | TEXT | URL del curso |
 | uni_countries | INT | FK → `countries(id)` |
-| disciplinary_field | INT | FK → `disciplinary_fields(id)` |
 | course_university | INT | FK → `universities(id)` |
 | uni_languages | INT | FK → `languages(id)` |
 | course_levels | INT | FK → `course_levels(id)` |
@@ -124,6 +123,13 @@ El script `scripts/seed.py` inserta los valores en `countries`, `course_levels` 
 | study_hours | INT | Horas de estudio |
 | slots | INT | Cupos |
 | modified_date | DATE | Última fecha de modificación (para detectar cursos nuevos) |
+
+**course_disciplinary_fields** — relación N:M entre cursos y áreas disciplinarias:
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| course_id | INT | PK — FK → `courses(id)` (ON DELETE CASCADE) |
+| disciplinary_field_id | INT | PK — FK → `disciplinary_fields(id)` |
 
 **Mapeo de catálogos eMOVIES ↔ BD**: los códigos de catálogo de eMOVIES se traducen a IDs de catálogo de la app mediante las equivalencias directas código→ID almacenadas en `EmoviesCatalogTranslator` (en `src/infraestructure/mapper/emovies/emoviesCatalogTranslator.py`), sin nombres intermedios ni consultas a la BD. En la dirección inversa, `courseDtoMapper` traduce los IDs de catálogo de vuelta a nombres cargando mapas ID→nombre consultando la BD (método `_catalogNameMaps` de `PostgresDatabaseRepositoryImp`).
 

@@ -17,7 +17,6 @@ COURSES_SELECT_COLUMNS = [
     "c.title",
     "c.url",
     "c.uni_countries",
-    "c.disciplinary_field",
     "c.course_university",
     "c.uni_languages",
     "c.course_levels",
@@ -36,7 +35,6 @@ CATALOG_JOINS = [
     ("universities", "university", "university_name", "c.course_university"),
     ("languages", "language", "language_name", "c.uni_languages"),
     ("course_levels", "course_level", "course_level_name", "c.course_levels"),
-    ("disciplinary_fields", "disciplinary_field", "disciplinary_field_name", "c.disciplinary_field"),
     ("courses_sources", "source", "source_name", "c.source_id"),
 ]
 
@@ -45,7 +43,6 @@ COURSES_COLUMNS = [
     "title",
     "url",
     "uni_countries",
-    "disciplinary_field",
     "course_university",
     "uni_languages",
     "course_levels",
@@ -83,15 +80,25 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         connection = get_db_connection()
 
         insertQuery = sql.SQL(
-            "INSERT INTO courses ({columns}) VALUES ({placeholders})"
+            "INSERT INTO courses ({columns}) VALUES ({placeholders}) RETURNING id"
         ).format(
             columns=sql.SQL(", ").join(sql.Identifier(column) for column in COURSES_COLUMNS),
             placeholders=sql.SQL(", ").join(sql.Placeholder() for _ in COURSES_COLUMNS),
         )
 
+        insertDisciplinaryQuery = sql.SQL(
+            "INSERT INTO course_disciplinary_fields (course_id, disciplinary_field_id) VALUES (%s, %s)"
+        )
+
         with connection.cursor() as cursor:
             for course in courses:
                 cursor.execute(insertQuery, self._courseToRow(course))
+                courseRow = cursor.fetchone()
+                if courseRow is None:
+                    raise RuntimeError("No se pudo obtener el id del curso insertado")
+                courseId = courseRow["id"]
+                for disciplinaryFieldId in course.disciplinary_fields or []:
+                    cursor.execute(insertDisciplinaryQuery, (courseId, disciplinaryFieldId))
 
         logging.info("PostgresDatabaseRepositoryImp: se insertaron %d cursos en la tabla courses", len(courses))
         return len(courses)
@@ -102,7 +109,6 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
 
         catalogFilters = [
             ("uni_countries", filters.countryId),
-            ("disciplinary_field", filters.disciplinaryFieldId),
             ("course_university", filters.universityId),
             ("uni_languages", filters.languageId),
             ("course_levels", filters.courseLevelId),
@@ -112,6 +118,15 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
                 continue
             conditions.append(sql.SQL("(c.{col} = %s OR %s IS NULL)").format(col=sql.Identifier(column)))
             params.extend([filterId, filterId])
+
+        if filters.disciplinaryFieldId is not None:
+            conditions.append(
+                sql.SQL(
+                    "EXISTS (SELECT 1 FROM course_disciplinary_fields cdf "
+                    "WHERE cdf.course_id = c.id AND cdf.disciplinary_field_id = %s)"
+                )
+            )
+            params.append(filters.disciplinaryFieldId)
 
         if filters.keyword:
             conditions.append(sql.SQL("(c.title ILIKE %s OR c.description ILIKE %s)"))
@@ -130,6 +145,15 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
                     alias=sql.Identifier(alias),
                 )
             )
+        selectColumns.append(
+            sql.SQL(
+                "COALESCE((SELECT string_agg(BTRIM(df.disciplinary_field), ', ' "
+                "ORDER BY BTRIM(df.disciplinary_field)) "
+                "FROM course_disciplinary_fields cdf "
+                "JOIN disciplinary_fields df ON df.id = cdf.disciplinary_field_id "
+                "WHERE cdf.course_id = c.id), '') AS disciplinary_fields"
+            )
+        )
 
         query = sql.SQL("SELECT {columns} FROM courses AS c").format(
             columns=sql.SQL(", ").join(selectColumns)
@@ -160,7 +184,7 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             url=row.get("url"),
             country=row.get("country_name"),
             language=row.get("language_name"),
-            disciplinaryField=row.get("disciplinary_field_name"),
+            disciplinaryFields=self._rowDisciplinaryFields(row.get("disciplinary_fields")),
             courseLevel=row.get("course_level_name"),
             startClassDate=row.get("start_class_date"),
             endClassDate=row.get("end_class_date"),
@@ -253,13 +277,18 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
             keyWord=keyWord,
         )
 
+    def _rowDisciplinaryFields(self, value: Optional[str]) -> Optional[List[str]]:
+        if not value:
+            return None
+        names = [part.strip() for part in value.split(",") if part.strip()]
+        return names or None
+
     def _courseToRow(self, dto: CoursesDto) -> tuple:
         return (
             dto.source_id,
             dto.title,
             dto.url,
             dto.uni_countries,
-            dto.disciplinary_field,
             dto.course_university,
             dto.uni_languages,
             dto.course_levels,

@@ -54,19 +54,19 @@ def _extractHtmlData(html:str):
     for card in cards:
         cardClassz = card.get("class", [])
 
-        diciplinary = ""
+        disciplinaryTags = []
         level = ""
         language = ""
 
         for cardClass in cardClassz:
             if cardClass.startswith("course_disciplinary_new"):
-                diciplinary = "-".join(cardClass.split("-")[1:])
+                disciplinaryTags.append("-".join(cardClass.split("-")[1:]))
             elif cardClass.startswith("course_level"):
                 level = "-".join(cardClass.split("-")[1:])
             elif cardClass.startswith("university_language"):
-                language = "-".join(cardClass.split("-")[1:])      
+                language = "-".join(cardClass.split("-")[1:])
 
-        cardsInfo.append((diciplinary, level, language))
+        cardsInfo.append((disciplinaryTags, level, language))
 
     return cardsInfo
 
@@ -87,12 +87,20 @@ def emovieResponseToCourseModels(
         for course in apiDataDto.courses.posts
     ]
 
-    for i, (disciplinary, level, language) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
+    for i, (disciplinaryTags, level, language) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
         if i >= len(courseModels):
             break
+        disciplinaryIds = [
+            appId
+            for appId in (
+                emoviesHtmlTagToAppIdCatalog("disciplinary_fields", tag)
+                for tag in disciplinaryTags
+            )
+            if appId is not None
+        ]
         courseModels[i] = courseModels[i].model_copy(
             update={
-                "disciplinaryField": emoviesHtmlTagToAppIdCatalog("disciplinary_fields", disciplinary),
+                "disciplinaryFields": list(dict.fromkeys(disciplinaryIds)) or None,
                 "courseLevel": emoviesHtmlTagToAppIdCatalog("course_levels", level),
                 "language": emoviesHtmlTagToAppIdCatalog("languages", language),
             }

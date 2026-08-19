@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS courses (
     title VARCHAR(255),
     url TEXT,
     uni_countries INT REFERENCES countries(id),
-    disciplinary_field INT REFERENCES disciplinary_fields(id),
     course_university INT REFERENCES universities(id),
     uni_languages INT REFERENCES languages(id),
     course_levels INT REFERENCES course_levels(id),
@@ -70,6 +69,14 @@ CREATE TABLE IF NOT EXISTS courses (
     study_hours INT,
     slots INT,
     modified_date DATE
+)
+"""
+
+CREATE_COURSE_DISCIPLINARY_FIELDS_TABLE = """
+CREATE TABLE IF NOT EXISTS course_disciplinary_fields (
+    course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+    disciplinary_field_id INT REFERENCES disciplinary_fields(id),
+    PRIMARY KEY (course_id, disciplinary_field_id)
 )
 """
 
@@ -91,6 +98,7 @@ def create_tables():
             cursor.execute(CREATE_CHAT_CONFIGS_TABLE)
             cursor.execute(CREATE_COURSES_SOURCES_TABLE)
             cursor.execute(CREATE_COURSES_TABLE)
+            cursor.execute(CREATE_COURSE_DISCIPLINARY_FIELDS_TABLE)
 
             for sourceName in APP_COURSE_SOURCES.values():
                 cursor.execute(INSERT_COURSE_SOURCE, (sourceName,))

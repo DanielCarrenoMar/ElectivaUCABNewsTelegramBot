@@ -44,8 +44,7 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 1. Instalar dependencias:
 
    ```bash
-   pip install -r requirements-scraper.txt
-   playwright install chromium 
+   pip install -r requirements-scraper.txt && playwright install --with-deps chromium
    ```
 
 2. Colocar variables de entorno.

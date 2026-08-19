@@ -3,6 +3,7 @@ from src.infraestructure.dto.ausjal.ausjalCourseDto import AusjalCourseDto
 from src.infraestructure.mapper.ausjal.ausjalCatalogTranslator import ausjalTextToAppIdCatalog
 
 def ausjalCourseDtoToCourseModel(dto: AusjalCourseDto) -> CourseModel:
+    disciplinaryFieldId = ausjalTextToAppIdCatalog("disciplinary_fields", dto.disciplinaryField)
     return CourseModel(
         sourceId=2, # id de Ausjal,
         title=dto.title,
@@ -11,7 +12,7 @@ def ausjalCourseDtoToCourseModel(dto: AusjalCourseDto) -> CourseModel:
         url=dto.documentUrl or "",
         country=ausjalTextToAppIdCatalog("countries", dto.uniCountries),
         language=None,
-        disciplinaryField=ausjalTextToAppIdCatalog("disciplinary_fields", dto.disciplinaryField),
+        disciplinaryFields=[disciplinaryFieldId] if disciplinaryFieldId is not None else None,
         startClassDate=dto.startClassDate,
         endClassDate=dto.endClassDate,
         startInscriptionDate=dto.startInscriptionDate,
