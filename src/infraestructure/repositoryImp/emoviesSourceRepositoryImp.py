@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple
 from urllib.parse import urlencode
@@ -38,12 +37,13 @@ class EmoviesSourceRepositoryImp(SourceRepository):
     Playwright lanza Chromium, deja que el JS del challenge se resuelva y
     lee el JSON real.
 
-    Con browser_count > 1 las páginas de la API se consultan en paralelo:
-    cada worker usa un navegador dedicado (la sync API de Playwright no es
-    thread-safe, así que cada thread crea su propia sesión). El número de
-    navegadores se configura con el parámetro browser_count del constructor
-    o con la variable de entorno EMOVIES_BROWSER_COUNT; con 1 el
-    comportamiento es el original (una sesión reutilizada, secuencial).
+    Imunify360 solo deja pasar la primera llamada admin-ajax de una sesión
+    de navegador; las siguientes de la misma sesión se quedan atascadas en
+    el challenge. Por eso cada página se consulta con una sesión Playwright
+    nueva (creada y cerrada por página) y, si falla, se reintenta con otra
+    sesión fresca. El número de reintentos se configura con el parámetro
+    page_retries del constructor o con la variable de entorno
+    EMOVIES_PAGE_RETRIES.
     """
 
     SOURCE_ID = 1  # id de la fuente en courses_sources (ver APP_COURSE_SOURCES en defaultValuesCatalog)
@@ -52,7 +52,7 @@ class EmoviesSourceRepositoryImp(SourceRepository):
     REQUEST_TIMEOUT_MS = 60_000
     CHALLENGE_TIMEOUT_MS = 60_000
     NO_FILTER_VALUE = "NaN"
-    DEFAULT_BROWSER_COUNT = 1
+    DEFAULT_PAGE_RETRIES = 2
     BROWSER_UA = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -62,44 +62,33 @@ class EmoviesSourceRepositoryImp(SourceRepository):
     def __init__(
         self,
         web_scraper: Optional[Callable[[EmovieApiCourseDto], EmoviesWebScraperCourseDto]] = None,
-        browser_count: Optional[int] = None,
+        page_retries: Optional[int] = None,
     ):
         self._web_scraper = web_scraper
-        self._browser_count = self._resolveBrowserCount(browser_count)
-        self._playwright: Optional[Playwright] = None
-        self._browser: Optional[Browser] = None
-        self._context: Optional[BrowserContext] = None
-        self._page: Optional[Page] = None
+        self._page_retries = self._resolvePageRetries(page_retries)
 
     @staticmethod
-    def _resolveBrowserCount(browser_count: Optional[int]) -> int:
-        """Resuelve el número de navegadores: parámetro explícito > env > default (1)."""
-        if browser_count is None:
-            envValue = os.getenv("EMOVIES_BROWSER_COUNT")
+    def _resolvePageRetries(page_retries: Optional[int]) -> int:
+        """Resuelve los reintentos por página: parámetro explícito > env > default (2)."""
+        if page_retries is None:
+            envValue = os.getenv("EMOVIES_PAGE_RETRIES")
             if envValue:
                 try:
-                    browser_count = int(envValue)
+                    page_retries = int(envValue)
                 except ValueError:
                     logger.warning(
-                        "EMOVIES_BROWSER_COUNT='%s' no es un entero válido; se usa el default %d",
+                        "EMOVIES_PAGE_RETRIES='%s' no es un entero válido; se usa el default %d",
                         envValue,
-                        EmoviesSourceRepositoryImp.DEFAULT_BROWSER_COUNT,
+                        EmoviesSourceRepositoryImp.DEFAULT_PAGE_RETRIES,
                     )
-                    browser_count = None
-            if browser_count is None:
-                browser_count = EmoviesSourceRepositoryImp.DEFAULT_BROWSER_COUNT
-        return max(1, browser_count)
+                    page_retries = None
+            if page_retries is None:
+                page_retries = EmoviesSourceRepositoryImp.DEFAULT_PAGE_RETRIES
+        return max(0, page_retries)
 
     def getCourses(self, max: Optional[int] = None) -> List[CourseModel]:
         apiParams = self._buildApiParams()
-        if self._browser_count > 1:
-            pagesData = self._fetchAllCoursesParallel(apiParams, max)
-        else:
-            try:
-                self._startBrowser()
-                pagesData = self._fetchAllCourses(apiParams, max)
-            finally:
-                self._stopBrowser()
+        pagesData = self._fetchAllCourses(apiParams, max)
 
         if pagesData is None:
             logger.warning("La API de eMOVIES no devolvió datos; se devuelve una lista vacía de cursos")
@@ -154,7 +143,7 @@ class EmoviesSourceRepositoryImp(SourceRepository):
         apiParams: EmovieApiParamsDto,
         max: Optional[int] = None,
     ) -> Optional[List[EmovieApiDataDto]]:
-        firstPageData = self._fetchPage(apiParams, 1)
+        firstPageData = self._fetchPageWithRetry(apiParams, 1)
         if firstPageData is None:
             logger.warning(
                 "No se pudo obtener la primera página de cursos de eMOVIES; se devolverá una lista vacía"
@@ -169,70 +158,67 @@ class EmoviesSourceRepositoryImp(SourceRepository):
         # La lista arranca con la primera página ya incluida; se consultan las restantes.
         pagesData: List[EmovieApiDataDto] = [firstPageData]
         for page in range(2, maxNumPages + 1):
-            pageData = self._fetchPage(apiParams, page)
+            pageData = self._fetchPageWithRetry(apiParams, page)
             if pageData is None or pageData.courses is None:
-                logger.warning("Página %d de eMOVIES sin datos; se omite", page)
+                logger.warning(
+                    "Página %d de eMOVIES sin datos tras %d intentos; se omite",
+                    page,
+                    self._page_retries + 1,
+                )
                 continue
             pagesData.append(pageData)
 
         logger.info("Se obtuvieron %d páginas de cursos desde eMOVIES", len(pagesData))
         return pagesData
 
-    def _fetchAllCoursesParallel(
+    def _fetchPageWithRetry(
         self,
         apiParams: EmovieApiParamsDto,
-        max: Optional[int] = None,
-    ) -> Optional[List[EmovieApiDataDto]]:
-        """Obtiene todas las páginas con hasta browser_count navegadores en paralelo.
+        pageNumber: int,
+    ) -> Optional[EmovieApiDataDto]:
+        """Consulta una página con sesión fresca y reintenta con otra sesión nueva si falla.
 
-        La primera página se resuelve en el pool (necesaria para conocer el
-        número total de páginas) y las restantes se reparten entre los
-        workers, cada uno con su propio navegador dedicado. El orden de la
-        lista final no importa: getCourses deduplica y ordena por fecha, y la
-        página 1 queda siempre en la posición 0.
+        Cada intento crea su propio navegador: Imunify360 deja pasar la
+        primera llamada admin-ajax de una sesión fresca y bloquea las
+        siguientes de la misma sesión.
         """
-        maxWorkers = self._browser_count
-        logger.info("Obteniendo cursos de eMOVIES con %d navegadores en paralelo", maxWorkers)
-
-        with ThreadPoolExecutor(max_workers=maxWorkers, thread_name_prefix="emovies-browser") as executor:
-            firstFuture = executor.submit(self._fetchPageWithOwnBrowser, apiParams, 1)
-            firstPageData = firstFuture.result()
-            if firstPageData is None:
+        maxAttempts = self._page_retries + 1
+        for attempt in range(1, maxAttempts + 1):
+            try:
+                pageData = self._fetchPageWithFreshBrowser(apiParams, pageNumber)
+            except Exception as e:
                 logger.warning(
-                    "No se pudo obtener la primera página de cursos de eMOVIES; se devolverá una lista vacía"
+                    "Intento %d de %d para la página %d de eMOVIES falló: %s",
+                    attempt,
+                    maxAttempts,
+                    pageNumber,
+                    str(e),
                 )
-                return None
+                continue
+            if pageData is not None:
+                return pageData
+            logger.warning(
+                "Intento %d de %d para la página %d de eMOVIES sin datos",
+                attempt,
+                maxAttempts,
+                pageNumber,
+            )
+        return None
 
-            coursesPayload = firstPageData.courses
-            maxNumPages = (coursesPayload.max_num_pages or firstPageData.max_num_page) or 1
-            logger.info("La API de eMOVIES reporta %d páginas de cursos", maxNumPages)
-
-            # La lista arranca con la primera página ya incluida; las restantes se reparten en paralelo.
-            pagesData: List[EmovieApiDataDto] = [firstPageData]
-            pendingFutures = {
-                executor.submit(self._fetchPageWithOwnBrowser, apiParams, page): page
-                for page in range(2, maxNumPages + 1)
-            }
-            for future in as_completed(pendingFutures):
-                page = pendingFutures[future]
-                try:
-                    pageData = future.result()
-                except Exception as e:
-                    logger.warning("Página %d de eMOVIES falló en su worker: %s", page, str(e))
-                    continue
-                if pageData is None or pageData.courses is None:
-                    logger.warning("Página %d de eMOVIES sin datos; se omite", page)
-                    continue
-                pagesData.append(pageData)
-
-        logger.info("Se obtuvieron %d páginas de cursos desde eMOVIES", len(pagesData))
-        return pagesData
-
-    def _fetchPage(self, apiParams: EmovieApiParamsDto, page: int) -> Optional[EmovieApiDataDto]:
-        """Consulta una página con la sesión de navegador compartida (modo secuencial)."""
-        if self._page is None:
-            raise RuntimeError("El browser de Playwright no está iniciado")
-        return self._fetchPageWithPage(self._page, apiParams, page)
+    def _fetchPageWithFreshBrowser(
+        self,
+        apiParams: EmovieApiParamsDto,
+        pageNumber: int,
+    ) -> Optional[EmovieApiDataDto]:
+        """Crea una sesión Playwright dedicada, consulta la página y la cierra."""
+        playwright, browser, context, page = self._createBrowserSession()
+        try:
+            return self._fetchPageWithPage(page, apiParams, pageNumber)
+        except Exception as e:
+            logger.warning("La página %d de eMOVIES falló en su navegador: %s", pageNumber, str(e))
+            return None
+        finally:
+            self._closeBrowserSession((playwright, browser, context, page))
 
     def _fetchPageWithPage(
         self,
@@ -274,24 +260,11 @@ class EmoviesSourceRepositoryImp(SourceRepository):
         logger.info("Página %d devolvió %d cursos", pageNumber, len(payload.data.courses.posts or []))
         return payload.data
 
-    def _startBrowser(self) -> None:
-        if self._page is not None:
-            return
-        self._playwright, self._browser, self._context, self._page = self._createBrowserSession()
-
-    def _stopBrowser(self) -> None:
-        self._closeBrowserSession((self._playwright, self._browser, self._context, self._page))
-        self._page = None
-        self._context = None
-        self._browser = None
-        self._playwright = None
-
     def _createBrowserSession(self) -> BrowserSession:
         """Crea una sesión Playwright completa: playwright + browser + context + page.
 
         Incluye la visita previa al sitio (cookies de primera parte + Referer
-        creíble). La sync API de Playwright no es thread-safe: en modo paralelo
-        cada worker crea su propia sesión dentro de su propio thread.
+        creíble).
         """
         try:
             from playwright.sync_api import sync_playwright
@@ -354,21 +327,6 @@ class EmoviesSourceRepositoryImp(SourceRepository):
                 playwright.stop()
             except Exception as e:
                 logger.debug("Error al detener Playwright: %s", str(e))
-
-    def _fetchPageWithOwnBrowser(
-        self,
-        apiParams: EmovieApiParamsDto,
-        pageNumber: int,
-    ) -> Optional[EmovieApiDataDto]:
-        """Worker paralelo: crea un navegador dedicado, consulta la página y lo cierra."""
-        playwright, browser, context, page = self._createBrowserSession()
-        try:
-            return self._fetchPageWithPage(page, apiParams, pageNumber)
-        except Exception as e:
-            logger.warning("Worker de la página %d de eMOVIES falló: %s", pageNumber, str(e))
-            return None
-        finally:
-            self._closeBrowserSession((playwright, browser, context, page))
 
     def _getJsonViaBrowser(self, page: Page, params: dict[str, Any]) -> Any:
         if page is None:
