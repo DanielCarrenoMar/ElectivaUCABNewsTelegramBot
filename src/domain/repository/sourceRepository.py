@@ -18,7 +18,7 @@ class CourseFilters(BaseModel):
     minModifiedDate: Optional[date] = None
 
 
-class CourseSourceRepository(ABC):
+class SourceRepository(ABC):
     # Identificador de la fuente en courses_sources; cada implementación define el suyo
     # (ver APP_COURSE_SOURCES en src/config/defaultValuesCatalog.py).
     SOURCE_ID: int = 0

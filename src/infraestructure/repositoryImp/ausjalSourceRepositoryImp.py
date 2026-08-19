@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from email.utils import parsedate_to_datetime
 
 from src.domain.model.courseModel import CourseModel
-from src.domain.repository.courseRepository import CourseFilters, CourseSourceRepository
+from src.domain.repository.sourceRepository import CourseFilters, SourceRepository
 from src.infraestructure.dto.ausjal.ausjalCourseDto import AusjalCourseDto
 from src.infraestructure.mapper.ausjal.ausjalMapper import ausjalCourseDtoToCourseModel
 
@@ -35,7 +35,7 @@ _ALL_DATES_REGEX = re.compile(
 
 logger = logging.getLogger("AusjalSourceRepositoryImp")
 
-class AusjalSourceRepositoryImp(CourseSourceRepository):
+class AusjalSourceRepositoryImp(SourceRepository):
     SOURCE_ID = 2  # id de la fuente en courses_sources (ver APP_COURSE_SOURCES en defaultValuesCatalog)
     SOURCE_URL = "https://cursos.iberoleon.mx/intercambiovirtual/index-icv.php"
     REQUEST_TIMEOUT_SECONDS = 30

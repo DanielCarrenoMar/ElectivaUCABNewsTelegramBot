@@ -1,8 +1,8 @@
-from src.domain.repository.courseRepository import CourseFilters, CourseSourceRepository
+from src.domain.repository.sourceRepository import CourseFilters, SourceRepository
 from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 class SyncCoursesUseCase:
-    def __init__(self, courseRepository: CourseSourceRepository):
+    def __init__(self, courseRepository: SourceRepository):
         self._courseRepository = courseRepository
         self._databaseRepository = PostgresDatabaseRepositoryImp()
 

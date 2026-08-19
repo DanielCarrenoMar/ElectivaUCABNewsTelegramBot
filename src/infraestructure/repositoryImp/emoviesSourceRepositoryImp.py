@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 BrowserSession = Tuple["Playwright", "Browser", "BrowserContext", "Page"]
 
 from src.domain.model.courseModel import CourseModel
-from src.domain.repository.courseRepository import CourseFilters, CourseSourceRepository
+from src.domain.repository.sourceRepository import CourseFilters, SourceRepository
 from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiCourseDto,
@@ -30,7 +30,7 @@ from src.infraestructure.mapper.emovies.emoviesMapper import emovieResponseToCou
 logger = logging.getLogger("EmoviesSourceRepositoryImp")
 
 
-class EmoviesSourceRepositoryImp(CourseSourceRepository):
+class EmoviesSourceRepositoryImp(SourceRepository):
     """Fuente de cursos eMOVIES.
 
     eMOVIES protege admin-ajax.php con Imunify360 (reto JS). Un GET con
