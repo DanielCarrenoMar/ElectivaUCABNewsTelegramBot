@@ -25,7 +25,7 @@ CATALOG_TABLES = {
 
 CREATE_CATALOG_TABLE = """
 CREATE TABLE IF NOT EXISTS {table} (
-    id SERIAL PRIMARY KEY,
+    id INT PRIMARY KEY,
     {value_column} VARCHAR(100) NOT NULL UNIQUE
 )
 """
@@ -81,7 +81,8 @@ CREATE TABLE IF NOT EXISTS course_disciplinary_fields (
 """
 
 INSERT_CATALOG_VALUE = """
-INSERT INTO {table} ({value_column}) VALUES (%s) ON CONFLICT ({value_column}) DO NOTHING
+INSERT INTO {table} (id, {value_column}) VALUES (%s, %s)
+ON CONFLICT (id) DO NOTHING
 """
 
 INSERT_COURSE_SOURCE = """
@@ -112,10 +113,10 @@ def create_tables():
 
             for table, value_column in CATALOG_TABLES.items():
                 values = catalogValues(table)
-                for value in values:
+                for catalog_id, value in values:
                     cursor.execute(
                         INSERT_CATALOG_VALUE.format(table=table, value_column=value_column),
-                        (value,),
+                        (catalog_id, value),
                     )
                 logging.info("Seed: %d valores insertados en catálogo '%s'", len(values), table)
 
