@@ -21,7 +21,7 @@ _HTML_TAG_TO_APP_COURSE_LEVELS: dict[str, Optional[int]] = {
 _HTML_TAG_TO_APP_DISCIPLINARY_FIELDS: dict[str, Optional[int]] = {
     # Slugs de disciplinary.txt
     "ingenierias": 17,  # Ingenierías
-    "administracion-de-empresas": 7,  # Administración de empresas
+    "gestion-empresarial": 7,  # Administración de empresas
     "ciencias-administrativas": 2,  # Ciencias administrativas
     "arquitectura-y-diseno": 4,  # Arquitectura y diseño
     "ciencias-economico-administrativas": 12,  # Ciencias económico-administrativas
@@ -78,7 +78,7 @@ _HTML_TAG_TO_APP_LANGUAGES: dict[str, Optional[int]] = {
     # Resto del catálogo de la app
     "frances": 2,  # Francés
     "ingles": 3,  # Ingles
-    "portugues": 5,  # Portugués
+    "pt": 5,  # Portugués
     "otro": 6,  # Otro
 }
 
