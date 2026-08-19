@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 BrowserSession = Tuple["Playwright", "Browser", "BrowserContext", "Page"]
 
 from src.domain.model.courseModel import CourseModel
-from src.domain.repository.sourceRepository import CourseFilters, SourceRepository
+from src.domain.repository.sourceRepository import SourceRepository
 from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiCourseDto,
@@ -90,8 +90,8 @@ class EmoviesSourceRepositoryImp(SourceRepository):
                 browser_count = EmoviesSourceRepositoryImp.DEFAULT_BROWSER_COUNT
         return max(1, browser_count)
 
-    def getCourses(self, filters: CourseFilters, max: Optional[int] = None) -> List[CourseModel]:
-        apiParams = self._buildApiParams(filters)
+    def getCourses(self, max: Optional[int] = None) -> List[CourseModel]:
+        apiParams = self._buildApiParams()
         if self._browser_count > 1:
             pagesData = self._fetchAllCoursesParallel(apiParams, max)
         else:
@@ -113,8 +113,7 @@ class EmoviesSourceRepositoryImp(SourceRepository):
 
         logger.info("Se obtuvieron %d cursos únicos tras deduplicar por ID", len(coursesById))
 
-        courseDtos = self._filterByMinModifiedDate(list(coursesById.values()), filters.minModifiedDate)
-        courseDtos = self._sortByDateDesc(courseDtos)
+        courseDtos = self._sortByDateDesc(list(coursesById.values()))
 
         # Se mapea cada página con su propio courses_html: los tags de área,
         # nivel e idioma quedan asociados a los cursos de esa misma página.
@@ -135,30 +134,19 @@ class EmoviesSourceRepositoryImp(SourceRepository):
             for courseDto in courseDtos
             if courseDto.ID in modelsByCourseId
         ]
-        courses: List[CourseModel] = []
-
-        for courseModel in courseModels:
-            if filters.minStudyHours is not None and courseModel.studyHours < filters.minStudyHours:
-                logger.debug(
-                    "Curso '%s' descartado: studyHours %d < minStudyHours %d",
-                    courseModel.title,
-                    courseModel.studyHours,
-                    filters.minStudyHours,
-                )
-                continue
-            courses.append(courseModel)
+        courses: List[CourseModel] = list(courseModels)
 
         logger.info("getCourses devolvió %d cursos", len(courses))
         return courses
 
-    def _buildApiParams(self, filters: CourseFilters) -> EmovieApiParamsDto:
+    def _buildApiParams(self) -> EmovieApiParamsDto:
         return EmovieApiParamsDto(
-            uni_search=filters.keyword or "",
-            course_levels=filters.courseLevel or self.NO_FILTER_VALUE,
-            uni_countries=filters.country or self.NO_FILTER_VALUE,
-            uni_languages=filters.language or self.NO_FILTER_VALUE,
-            course_university=filters.university or self.NO_FILTER_VALUE,
-            disciplinary_field=filters.disciplinaryField or self.NO_FILTER_VALUE,
+            uni_search="",
+            course_levels=self.NO_FILTER_VALUE,
+            uni_countries=self.NO_FILTER_VALUE,
+            uni_languages=self.NO_FILTER_VALUE,
+            course_university=self.NO_FILTER_VALUE,
+            disciplinary_field=self.NO_FILTER_VALUE,
         )
 
     def _fetchAllCourses(
@@ -416,28 +404,6 @@ class EmoviesSourceRepositoryImp(SourceRepository):
             }""",
             timeout=self.CHALLENGE_TIMEOUT_MS,
         )
-
-    def _filterByMinModifiedDate(
-        self,
-        courseDtos: List[EmovieApiCourseDto],
-        minModifiedDate: Optional[date],
-    ) -> List[EmovieApiCourseDto]:
-        if minModifiedDate is None:
-            return courseDtos
-
-        filtered: List[EmovieApiCourseDto] = []
-        for courseDto in courseDtos:
-            modifiedDate = parseApiDatetime(courseDto.post_modified)
-            if modifiedDate is not None and modifiedDate >= minModifiedDate:
-                filtered.append(courseDto)
-
-        logger.info(
-            "Filtro por fecha mínima %s: %d cursos -> %d cursos",
-            minModifiedDate,
-            len(courseDtos),
-            len(filtered),
-        )
-        return filtered
 
     def _sortByDateDesc(self, courseDtos: List[EmovieApiCourseDto]) -> List[EmovieApiCourseDto]:
         sortedDtos = sorted(

@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from email.utils import parsedate_to_datetime
 
 from src.domain.model.courseModel import CourseModel
-from src.domain.repository.sourceRepository import CourseFilters, SourceRepository
+from src.domain.repository.sourceRepository import SourceRepository
 from src.infraestructure.dto.ausjal.ausjalCourseDto import AusjalCourseDto
 from src.infraestructure.mapper.ausjal.ausjalMapper import ausjalCourseDtoToCourseModel
 
@@ -40,7 +40,7 @@ class AusjalSourceRepositoryImp(SourceRepository):
     SOURCE_URL = "https://cursos.iberoleon.mx/intercambiovirtual/index-icv.php"
     REQUEST_TIMEOUT_SECONDS = 30
 
-    def getCourses(self, filters: CourseFilters, max: Optional[int] = None) -> List[CourseModel]:
+    def getCourses(self, max: Optional[int] = None) -> List[CourseModel]:
         logger.info("getCourses: obteniendo cursos de AUSJAL desde %s", self.SOURCE_URL)
         response = requests.get(self.SOURCE_URL, timeout=self.REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
@@ -54,16 +54,6 @@ class AusjalSourceRepositoryImp(SourceRepository):
                 continue
 
             courseModel = ausjalCourseDtoToCourseModel(courseDto)
-
-            if filters.minModifiedDate is not None and courseModel.modifiedDate < filters.minModifiedDate:
-                logger.debug(
-                    "Curso '%s' descartado: modifiedDate %s < minModifiedDate %s",
-                    courseModel.title,
-                    courseModel.modifiedDate,
-                    filters.minModifiedDate,
-                )
-                continue
-
             courses.append(courseModel)
 
         logger.info("getCourses devolvió %d cursos de AUSJAL", len(courses))

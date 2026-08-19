@@ -1,4 +1,4 @@
-from src.domain.repository.sourceRepository import CourseFilters, SourceRepository
+from src.domain.repository.sourceRepository import SourceRepository
 from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 class SyncCoursesUseCase:
@@ -7,7 +7,7 @@ class SyncCoursesUseCase:
         self._databaseRepository = PostgresDatabaseRepositoryImp()
 
     def execute(self) -> int:
-        courses = self._courseRepository.getCourses(CourseFilters())
+        courses = self._courseRepository.getCourses()
         
         self._databaseRepository.deleteCoursesBySource(self._courseRepository.SOURCE_ID)
 
