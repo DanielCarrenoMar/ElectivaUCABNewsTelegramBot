@@ -18,7 +18,7 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 ## Comandos del bot
 
 - `/start` inicia el bot en el chat.
-- `/help` muestra ayuda.
+- `/ayuda` muestra ayuda.
 - `/filters` permite ver y modificar los filtros activos.
 - `/resetfilters` vuelve a filtros por defecto.
 - `/check` consulta inmediatamente y notifica cursos nuevos.
@@ -30,7 +30,7 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 ## Requisitos
 
 - Python 3.11+
-- Dependencias de `requirements.txt`
+- Dependencias de `requirements-scraper.txt` (incluye `requirements.txt` base)
 - Token de bot de Telegram
 
 ## Variables de entorno
@@ -44,12 +44,29 @@ Bot de Telegram para monitorear cursos disponibles en [eMOVIES](https://emovies.
 1. Instalar dependencias:
 
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-scraper.txt && playwright install --with-deps chromium
    ```
 
-2. Exportar variables de entorno.
-3. Ejecutar:
+2. Colocar variables de entorno.
+3. Inciar entorno venv
+4. Ejecutar:
 
+   Seed de database
    ```bash
-   python main.py
+   .venv\Scripts\python.exe -m scripts.seed
+   ```
+
+   Tarea sincronizar db con fuentes de datos
+   ```bash
+   .venv\Scripts\python.exe -m src.port.task.syncCoursesTask    
+   ```
+
+   Tarea notificar a todos los usuario los nuevos cursos
+   ```bash
+   .venv\Scripts\python.exe -m src.port.task.sendCoursesToSubcriptorsTask    
+   ```
+
+   Ejecutar bucle de bot Telegram
+   ```bash
+   .venv\Scripts\python.exe -m src.port.telegramBot.main   
    ```
