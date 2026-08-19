@@ -19,6 +19,10 @@ class CourseFilters(BaseModel):
 
 
 class CourseSourceRepository(ABC):
+    # Identificador de la fuente en courses_sources; cada implementación define el suyo
+    # (ver APP_COURSE_SOURCES en src/config/defaultValuesCatalog.py).
+    SOURCE_ID: int = 0
+
     @abstractmethod
     def getCourses(self, filters: CourseFilters, max: Optional[int] = None) -> List[CourseModel]:
         raise NotImplementedError

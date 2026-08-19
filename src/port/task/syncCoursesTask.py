@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 
 from src.aplication.syncCoursesUseCase import SyncCoursesUseCase
-from src.aplication.deleteAllCoursesUseCase import DeleteAllCoursesUseCase
 from src.infraestructure.repositoryImp.emoviesSourceRepositoryImp import EmoviesSourceRepositoryImp
 from src.infraestructure.repositoryImp.ausjalSourceRepositoryImp import AusjalSourceRepositoryImp
 from src.port.task.task import log_task_duration
@@ -26,8 +25,6 @@ def syncCoursesTask():
     ausjalSourceRepository = AusjalSourceRepositoryImp()
     emoviesSyncCoursesUseCase = SyncCoursesUseCase(emoviesSourceRepository)
     ausjalSyncCoursesUseCase = SyncCoursesUseCase(ausjalSourceRepository)
-
-    DeleteAllCoursesUseCase().execute()
 
     insertedEmovies = emoviesSyncCoursesUseCase.execute()
     logging.info("syncCoursesTask: sincronización con emovies completada con %d cursos", insertedEmovies)

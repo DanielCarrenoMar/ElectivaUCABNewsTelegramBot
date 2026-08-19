@@ -26,7 +26,7 @@ class ChatNewCourses(BaseModel):
 
 class DatabaseRepository(ABC):
     @abstractmethod
-    def deleteAllCourses(self) -> None:
+    def deleteCoursesBySource(self, sourceId: int) -> None:
         raise NotImplementedError
 
     @abstractmethod

@@ -100,11 +100,11 @@ CHAT_CONFIG_COLUMNS = [
 ]
 
 class PostgresDatabaseRepositoryImp(DatabaseRepository):
-    def deleteAllCourses(self) -> None:
+    def deleteCoursesBySource(self, sourceId: int) -> None:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute(sql.SQL("DELETE FROM courses"))
-        logging.info("PostgresDatabaseRepositoryImp: se eliminaron todos los cursos de la tabla courses")
+            cursor.execute(sql.SQL("DELETE FROM courses WHERE source_id = %s"), (sourceId,))
+        logging.info("PostgresDatabaseRepositoryImp: se eliminaron los cursos de la tabla courses con source_id=%s", sourceId)
 
     def saveCourses(self, courseModels: List[CourseModel]) -> int:
         totalCourses = len(courseModels)

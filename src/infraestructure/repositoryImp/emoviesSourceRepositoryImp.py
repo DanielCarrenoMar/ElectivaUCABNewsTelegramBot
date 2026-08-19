@@ -46,6 +46,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
     comportamiento es el original (una sesión reutilizada, secuencial).
     """
 
+    SOURCE_ID = 1  # id de la fuente en courses_sources (ver APP_COURSE_SOURCES en defaultValuesCatalog)
     API_URL = "https://emovies.oui-iohe.org/wp-admin/admin-ajax.php"
     SITE_URL = "https://emovies.oui-iohe.org/en/page-our-courses/"
     REQUEST_TIMEOUT_MS = 60_000

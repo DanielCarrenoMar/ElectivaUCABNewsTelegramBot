@@ -8,6 +8,8 @@ class SyncCoursesUseCase:
 
     def execute(self) -> int:
         courses = self._courseRepository.getCourses(CourseFilters())
+        
+        self._databaseRepository.deleteCoursesBySource(self._courseRepository.SOURCE_ID)
 
         inserted = self._databaseRepository.saveCourses(courses)
 

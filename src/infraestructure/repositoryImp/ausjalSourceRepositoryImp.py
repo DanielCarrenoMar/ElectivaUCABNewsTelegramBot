@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import requests
 from bs4 import BeautifulSoup
+from email.utils import parsedate_to_datetime
 
 from src.domain.model.courseModel import CourseModel
 from src.domain.repository.courseRepository import CourseFilters, CourseSourceRepository
@@ -35,6 +36,7 @@ _ALL_DATES_REGEX = re.compile(
 logger = logging.getLogger("AusjalSourceRepositoryImp")
 
 class AusjalSourceRepositoryImp(CourseSourceRepository):
+    SOURCE_ID = 2  # id de la fuente en courses_sources (ver APP_COURSE_SOURCES en defaultValuesCatalog)
     SOURCE_URL = "https://cursos.iberoleon.mx/intercambiovirtual/index-icv.php"
     REQUEST_TIMEOUT_SECONDS = 30
 
@@ -122,18 +124,35 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                         modified_date = None
                         if documentUrl:
                             try:
-                                response = requests.head(documentUrl, allow_redirects=True, timeout=5)
-                                last_modified = response.headers.get("Last-Modified")
+                                response = requests.head(
+                                    documentUrl, allow_redirects=True, timeout=5
+                                )
 
-                                if last_modified:
-                                    modified_date = datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %z").date()
+                                dates_to_compare = []
+
+                                # Extraer Last-Modified y Date de los encabezados HTTP
+                                for header_key in ["Last-Modified", "Date"]:
+                                    header_val = response.headers.get(header_key)
+                                    if header_val:
+                                        try:
+                                            # parsedate_to_datetime maneja correctamente 'GMT' y RFC 2822
+                                            dt = parsedate_to_datetime(header_val)
+                                            dates_to_compare.append(dt)
+                                        except Exception:
+                                            pass
+
+                                # Si encontramos al menos una fecha válida, elegimos la más reciente
+                                if dates_to_compare:
+                                    most_recent_dt = max(dates_to_compare)
+                                    modified_date = most_recent_dt.date()
+
                             except Exception:
                                 pass
 
                         startClassDate = self._parseDate(startClassCell.get_text(strip=True) if startClassCell else None)
 
                         if not modified_date:
-                            modified_date = startClassDate or date.today()
+                            modified_date = date.today()
 
                         title = titleCell.get_text(strip=True) if titleCell else None
 
