@@ -86,7 +86,7 @@ ElectivaUCABNewsTelegramBot/
 | course_levels | INT | FK → `course_levels(id)` |
 | key_word | CHAR(50) | Palabra clave de búsqueda |
 
-**Tablas catálogo** — cada una con dos columnas: `id` (SERIAL, PK) y una columna `CHAR(100) NOT NULL UNIQUE` con el valor:
+**Tablas catálogo** — cada una con dos columnas: `id` (INT, PK, valor explícito no serial) y una columna `CHAR(100) NOT NULL UNIQUE` con el valor:
 
 - `universities` — universidades
 - `disciplinary_fields` — áreas disciplinarias
@@ -94,7 +94,7 @@ ElectivaUCABNewsTelegramBot/
 - `languages` — idiomas
 - `course_levels` — niveles académicos
 
-El script `scripts/seed.py` inserta los valores en `countries`, `course_levels` y `disciplinary_fields` desde `src/config/defaultValuesCatalog.py` (`catalogValues(catalog)`). `universities` y `languages` quedan vacíos hasta que se provean datos.
+El script `scripts/seed.py` inserta los valores de todas las tablas catálogo con su `id` explícito (la clave del dict en `src/config/defaultValuesCatalog.py`, `catalogValues(catalog)` devuelve pares `(id, valor)`).
 
 **courses_sources** — catálogo de fuentes de cursos:
 
