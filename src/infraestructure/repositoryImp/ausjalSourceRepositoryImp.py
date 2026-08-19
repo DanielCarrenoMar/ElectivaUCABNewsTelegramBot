@@ -49,6 +49,10 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
         courses: List[CourseModel] = []
 
         for courseDto in courseDtos:
+            if not courseDto.modifiedDate: 
+                logger.warning("Curso '%s' descartado: modifiedDate es None", courseDto.title)
+                continue
+
             courseModel = ausjalCourseDtoToCourseModel(courseDto)
 
             if filters.minModifiedDate is not None and courseModel.modifiedDate < filters.minModifiedDate:
@@ -121,38 +125,9 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                             if link is not None and "href" in link.attrs:
                                 documentUrl = link["href"]
 
-                        modified_date = None
-                        if documentUrl:
-                            try:
-                                response = requests.head(
-                                    documentUrl, allow_redirects=True, timeout=5
-                                )
-
-                                dates_to_compare = []
-
-                                # Extraer Last-Modified y Date de los encabezados HTTP
-                                for header_key in ["Last-Modified", "Date"]:
-                                    header_val = response.headers.get(header_key)
-                                    if header_val:
-                                        try:
-                                            # parsedate_to_datetime maneja correctamente 'GMT' y RFC 2822
-                                            dt = parsedate_to_datetime(header_val)
-                                            dates_to_compare.append(dt)
-                                        except Exception:
-                                            pass
-
-                                # Si encontramos al menos una fecha válida, elegimos la más reciente
-                                if dates_to_compare:
-                                    most_recent_dt = max(dates_to_compare)
-                                    modified_date = most_recent_dt.date()
-
-                            except Exception:
-                                pass
+                        modified_date = self._getDocumentModifiedDate(documentUrl)
 
                         startClassDate = self._parseDate(startClassCell.get_text(strip=True) if startClassCell else None)
-
-                        if not modified_date:
-                            modified_date = date.today()
 
                         title = titleCell.get_text(strip=True) if titleCell else None
 
@@ -189,6 +164,25 @@ class AusjalSourceRepositoryImp(CourseSourceRepository):
                             len(courses),
                         )
         return courses
+
+    def _getDocumentModifiedDate(self, documentUrl: Optional[str]) -> Optional[date]:
+        if not documentUrl:
+            return None
+
+        try:
+            response = requests.head(documentUrl, allow_redirects=True, timeout=5)
+            header_val = response.headers.get("Last-Modified")
+            if header_val:
+                try:
+                    return parsedate_to_datetime(header_val).date()
+                except Exception as exc:
+                    logger.warning(
+                        "No se pudo parsear el header Last-Modified de %s: %s", documentUrl, exc
+                    )
+        except Exception as exc:
+            logger.warning("No se pudo obtener Last-Modified de %s: %s", documentUrl, exc)
+
+        return None
 
     def _parseDate(self, date_string: Optional[str]) -> Optional[date]:
         if not date_string:
