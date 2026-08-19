@@ -26,7 +26,7 @@ _HTML_TAG_TO_APP_DISCIPLINARY_FIELDS: dict[str, Optional[int]] = {
     "arquitectura-y-diseno": 4,  # Arquitectura y diseño
     "ciencias-economico-administrativas": 12,  # Ciencias económico-administrativas
     "ciencias-sociales-y-humanidades": 45,  # Ciencias sociales y Humanidades
-    "negocios-internacionales": None,  # Sin equivalente en el catálogo de la app
+    "negocios-internacionales": 62,  # Negocios Internacionales
     "ciencias-de-la-salud": 20,  # Ciencias de la salud
     "educacion-y-pedagogia": 15,  # Educación y pedagogía
     "psicologia": 43,  # Psicología
@@ -70,6 +70,28 @@ _HTML_TAG_TO_APP_DISCIPLINARY_FIELDS: dict[str, Optional[int]] = {
     "sociologia": 46,  # Sociología
     "deportes": 47,  # Deportes
     "veterinaria-y-zootecnia": 48,  # Veterinaria y zootecnia
+    "biologia": 49,  # Biología
+    "ciencias-exactas-y-naturales": 50,  # Ciencias exactas y naturales
+    "enfermeria": 51,  # Enfermería
+    "farmacia": 52,  # Farmacia
+    "geografia": 53,  # Geografía
+    "geologia": 54,  # Geología
+    "hoteleria-y-turismo": 56,  # Hotelería y turismo
+    "ingenieria-de-sistemas": 57,  # Ingeniería de Sistemas
+    "ingenieria-electrica": 58,  # Ingeniería Eléctrica
+    "ingenieria-industrial": 59,  # Ingeniería Industrial
+    "ingenieria-mecanica": 60,  # Ingeniería Mecánica
+    "medicina": 61,  # Medicina
+    "otra-ciencia-administrativa": 63,  # Otra Ciencia administrativa
+    "otra-ciencia-biologica": 64,  # Otra Ciencia Biológica
+    "otra-ciencia-exacta-o-natural": 65,  # Otra Ciencia exacta o natural
+    "otra-ingenieria": 66,  # Otra Ingeniería
+    "periodismo": 67,  # Periodismo
+    "quimica": 68,  # Química
+    "religion-y-teologia": 69,  # Religión y teología
+    "salud-infantil": 70,  # Salud infantil
+    "terapia-y-rehabilitacion": 71,  # Terapia y rehabilitación
+    "trabajo-social": 72,  # Trabajo Social
 }
 
 _HTML_TAG_TO_APP_LANGUAGES: dict[str, Optional[int]] = {
