@@ -1,0 +1,30 @@
+name: Sync Courses
+
+on:
+  schedule:
+    # 00:00 GMT-4 = 04:00 UTC (GitHub Actions cron uses UTC)
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14.7"
+
+      - name: Install dependencies
+        run: pip install -r requirements-scraper.txt
+
+      - name: Install Chromium (Playwright)
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run sync courses task
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+        run: python -m src.port.task.syncCoursesTask
