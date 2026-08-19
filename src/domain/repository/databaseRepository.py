@@ -19,6 +19,11 @@ class DatabaseCourseFilters(BaseModel):
     minModifiedDate: Optional[date] = None
 
 
+class ChatNewCourses(BaseModel):
+    chatId: int
+    courses: List[ShowCourseModel]
+
+
 class DatabaseRepository(ABC):
     @abstractmethod
     def deleteAllCourses(self) -> None:
@@ -38,6 +43,10 @@ class DatabaseRepository(ABC):
 
     @abstractmethod
     def getSubcriptorsChatConfig(self) -> List[ChatConfig]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def getNewCoursesForChats(self) -> List[ChatNewCourses]:
         raise NotImplementedError
 
     @abstractmethod

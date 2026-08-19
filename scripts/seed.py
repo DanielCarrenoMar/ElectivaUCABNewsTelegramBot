@@ -26,7 +26,7 @@ CATALOG_TABLES = {
 CREATE_CATALOG_TABLE = """
 CREATE TABLE IF NOT EXISTS {table} (
     id SERIAL PRIMARY KEY,
-    {value_column} CHAR(100) NOT NULL UNIQUE
+    {value_column} VARCHAR(100) NOT NULL UNIQUE
 )
 """
 
@@ -40,14 +40,14 @@ CREATE TABLE IF NOT EXISTS chatconfigs (
     course_university INT REFERENCES universities(id),
     uni_languages INT REFERENCES languages(id),
     course_levels INT REFERENCES course_levels(id),
-    key_word CHAR(50)
+    key_word VARCHAR(50)
 )
 """
 
 CREATE_COURSES_SOURCES_TABLE = """
 CREATE TABLE IF NOT EXISTS courses_sources (
     id SERIAL PRIMARY KEY,
-    source CHAR(100) NOT NULL UNIQUE
+    source VARCHAR(100) NOT NULL UNIQUE
 )
 """
 
@@ -99,6 +99,13 @@ def create_tables():
             cursor.execute(CREATE_COURSES_SOURCES_TABLE)
             cursor.execute(CREATE_COURSES_TABLE)
             cursor.execute(CREATE_COURSE_DISCIPLINARY_FIELDS_TABLE)
+
+            # La extensión pg_trgm puede requerir privilegios de superusuario en PostgreSQL
+            cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_courses_filters ON courses (uni_countries, uni_languages, course_levels, course_university)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_disc_fields_disc ON course_disciplinary_fields (disciplinary_field_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_courses_title_trgm ON courses USING gin (title gin_trgm_ops)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_courses_description_trgm ON courses USING gin (description gin_trgm_ops)")
 
             for sourceName in APP_COURSE_SOURCES.values():
                 cursor.execute(INSERT_COURSE_SOURCE, (sourceName,))

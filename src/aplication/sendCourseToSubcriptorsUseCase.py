@@ -1,8 +1,6 @@
 import logging
 
-from src.domain.model.chatConfigModel import ChatConfig
 from src.domain.repository.notifierRepository import notifierRepository
-from src.domain.repository.databaseRepository import DatabaseCourseFilters
 from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
@@ -16,52 +14,36 @@ class SendCourseToSubcriptorsUseCase:
         chatConfigs = self._databaseRepository.getSubcriptorsChatConfig()
         logging.info("SendCourseToSubcriptorsUseCase: procesando %d configuraciones de chat", len(chatConfigs))
 
+        matches = self._databaseRepository.getNewCoursesForChats()
+        coursesByChatId = {match.chatId: match.courses for match in matches}
+
         for chat in chatConfigs:
+            courses = coursesByChatId.get(chat.id)
+            if courses is None:
+                logging.debug(
+                    "SendCourseToSubcriptorsUseCase: sin cursos para el chat %s; no se actualiza lastrevision",
+                    chat.id,
+                )
+                continue
+
             try:
-                totalSent += self._processChat(chat)
+                sent = 0
+                for course in courses:
+                    self._notifier.sendCourseToChat(chat.id, course)
+                    sent += 1
+
+                chat.lastRevision = courses[0].modifiedDate
+                self._databaseRepository.updateChatConfig(chat)
+                totalSent += sent
+
+                logging.info(
+                    "SendCourseToSubcriptorsUseCase: el chat %s recibió %d curso(s); lastrevision actualizada a %s",
+                    chat.id,
+                    sent,
+                    courses[0].modifiedDate,
+                )
             except Exception:
                 logging.exception("SendCourseToSubcriptorsUseCase: error procesando el chat %s", chat.id)
 
         logging.info("SendCourseToSubcriptorsUseCase: total de cursos enviados %d", totalSent)
         return totalSent
-
-    def _processChat(self, chat: ChatConfig) -> int:
-
-        filters = DatabaseCourseFilters(
-            countryId=chat.uniCountries,
-            disciplinaryFieldId=chat.disciplinaryField,
-            universityId=chat.courseUniversity,
-            languageId=chat.uniLanguages,
-            courseLevelId=chat.courseLevels,
-            keyword=chat.keyWord,
-            minModifiedDate=chat.lastRevision,
-        )
-        courses = self._databaseRepository.getCourses(filters)
-        if not courses:
-            logging.debug(
-                "SendCourseToSubcriptorsUseCase: sin cursos para el chat %s; no se actualiza lastrevision",
-                chat.id,
-            )
-            return 0
-
-        newest = courses[0].modifiedDate
-        if chat.lastRevision is not None:
-            new_courses = [course for course in courses if course.modifiedDate > chat.lastRevision]
-        else:
-            new_courses = courses
-
-        sent = 0
-        for course in new_courses:
-            self._notifier.sendCourseToChat(chat.id, course)
-            sent += 1
-
-        chat.lastRevision = newest
-        self._databaseRepository.updateChatConfig(chat)
-
-        logging.info(
-            "SendCourseToSubcriptorsUseCase: el chat %s recibió %d curso(s); lastrevision actualizada a %s",
-            chat.id,
-            sent,
-            newest,
-        )
-        return sent

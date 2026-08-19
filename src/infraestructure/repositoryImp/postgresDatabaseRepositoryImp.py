@@ -1,10 +1,14 @@
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from psycopg import sql
 
 from src.domain.model.chatConfigModel import ChatConfig
-from src.domain.repository.databaseRepository import DatabaseCourseFilters, DatabaseRepository
+from src.domain.repository.databaseRepository import (
+    ChatNewCourses,
+    DatabaseCourseFilters,
+    DatabaseRepository,
+)
 from src.domain.model.courseModel import ShowCourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.domain.model.courseModel import CourseModel
@@ -36,6 +40,33 @@ CATALOG_JOINS = [
     ("languages", "language", "language_name", "c.uni_languages"),
     ("course_levels", "course_level", "course_level_name", "c.course_levels"),
     ("courses_sources", "source", "source_name", "c.source_id"),
+]
+
+COURSES_SELECT_COLUMNS_CO = [
+    "co.id",
+    "co.source_id",
+    "co.title",
+    "co.url",
+    "co.uni_countries",
+    "co.course_university",
+    "co.uni_languages",
+    "co.course_levels",
+    "co.start_class_date",
+    "co.end_class_date",
+    "co.start_inscription_date",
+    "co.end_inscription_date",
+    "co.description",
+    "co.study_hours",
+    "co.slots",
+    "co.modified_date",
+]
+
+CATALOG_JOINS_CO = [
+    ("countries", "country", "country_name", "co.uni_countries"),
+    ("universities", "university", "university_name", "co.course_university"),
+    ("languages", "language", "language_name", "co.uni_languages"),
+    ("course_levels", "course_level", "course_level_name", "co.course_levels"),
+    ("courses_sources", "source", "source_name", "co.source_id"),
 ]
 
 COURSES_COLUMNS = [
@@ -79,29 +110,49 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         totalCourses = len(courseModels)
         logging.info("PostgresDatabaseRepositoryImp: convirtiendo dto a model para guardar %d cursos en la tabla courses", totalCourses)
         courses = [courseModelToCoursesDto(course) for course in courseModels]
-        connection = get_db_connection()
+        if not courses:
+            logging.info("PostgresDatabaseRepositoryImp: se insertaron 0 cursos en la tabla courses")
+            return 0
 
-        insertQuery = sql.SQL(
-            "INSERT INTO courses ({columns}) VALUES ({placeholders}) RETURNING id"
-        ).format(
-            columns=sql.SQL(", ").join(sql.Identifier(column) for column in COURSES_COLUMNS),
-            placeholders=sql.SQL(", ").join(sql.Placeholder() for _ in COURSES_COLUMNS),
-        )
+        connection = get_db_connection()
 
         insertDisciplinaryQuery = sql.SQL(
             "INSERT INTO course_disciplinary_fields (course_id, disciplinary_field_id) VALUES (%s, %s)"
         )
 
+        # Lotes de 1000 cursos: el protocolo de PostgreSQL limita a 65535 parámetros por sentencia
+        # (1000 cursos x 15 columnas = 15000 parámetros por lote, muy por debajo del límite).
+        BATCH_SIZE = 1000
+        disciplinaryPairs = []
         with connection.cursor() as cursor:
-            for i, course in enumerate(courses):
-                cursor.execute(insertQuery, self._courseToRow(course))
-                logging.info("PostgresDatabaseRepositoryImp: curso insertado en la tabla courses: %d / %s", i, totalCourses)
-                courseRow = cursor.fetchone()
-                if courseRow is None:
-                    raise RuntimeError("No se pudo obtener el id del curso insertado")
-                courseId = courseRow["id"]
+            courseIds = []
+            for start in range(0, len(courses), BATCH_SIZE):
+                batch = courses[start : start + BATCH_SIZE]
+                rowPlaceholders = (
+                    sql.SQL("(")
+                    + sql.SQL(", ").join(sql.Placeholder() for _ in COURSES_COLUMNS)
+                    + sql.SQL(")")
+                )
+                insertQuery = sql.SQL(
+                    "INSERT INTO courses ({columns}) VALUES {rows} RETURNING id"
+                ).format(
+                    columns=sql.SQL(", ").join(sql.Identifier(column) for column in COURSES_COLUMNS),
+                    rows=sql.SQL(", ").join(rowPlaceholders for _ in batch),
+                )
+                batchParams = [value for course in batch for value in self._courseToRow(course)]
+                cursor.execute(insertQuery, batchParams)
+                batchIds = [row["id"] for row in cursor.fetchall()]
+                if len(batchIds) != len(batch):
+                    raise RuntimeError(
+                        f"El número de ids devueltos ({len(batchIds)}) no coincide con el número de cursos insertados en el lote ({len(batch)})"
+                    )
+                courseIds.extend(batchIds)
+
+            for courseId, course in zip(courseIds, courses):
                 for disciplinaryFieldId in course.disciplinary_fields or []:
-                    cursor.execute(insertDisciplinaryQuery, (courseId, disciplinaryFieldId))
+                    disciplinaryPairs.append((courseId, disciplinaryFieldId))
+            if disciplinaryPairs:
+                cursor.executemany(insertDisciplinaryQuery, disciplinaryPairs)
 
         logging.info("PostgresDatabaseRepositoryImp: se insertaron %d cursos en la tabla courses", len(courses))
         return len(courses)
@@ -119,8 +170,8 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         for column, filterId in catalogFilters:
             if filterId is None:
                 continue
-            conditions.append(sql.SQL("(c.{col} = %s OR %s IS NULL)").format(col=sql.Identifier(column)))
-            params.extend([filterId, filterId])
+            conditions.append(sql.SQL("c.{col} = %s").format(col=sql.Identifier(column)))
+            params.append(filterId)
 
         if filters.disciplinaryFieldId is not None:
             conditions.append(
@@ -178,6 +229,76 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         courses = [self._rowToShowCourseModel(row) for row in rows]
         logging.info("PostgresDatabaseRepositoryImp: getCourses devolvió %d cursos", len(courses))
         return courses
+
+    def getNewCoursesForChats(self) -> List[ChatNewCourses]:
+        selectColumns = [sql.SQL(column) for column in COURSES_SELECT_COLUMNS_CO]
+        for table, valueColumn, alias, joinColumn in CATALOG_JOINS_CO:
+            selectColumns.append(
+                sql.SQL("BTRIM({table}.{value_col}) AS {alias}").format(
+                    table=sql.Identifier(table),
+                    value_col=sql.Identifier(valueColumn),
+                    alias=sql.Identifier(alias),
+                )
+            )
+        selectColumns.append(
+            sql.SQL(
+                "COALESCE((SELECT string_agg(BTRIM(df.disciplinary_field), ', ' "
+                "ORDER BY BTRIM(df.disciplinary_field)) "
+                "FROM course_disciplinary_fields cdf "
+                "JOIN disciplinary_fields df ON df.id = cdf.disciplinary_field_id "
+                "WHERE cdf.course_id = co.id), '') AS disciplinary_fields"
+            )
+        )
+        selectColumns.append(sql.SQL("cfg.id AS chat_id"))
+
+        conditions = [
+            sql.SQL("(cfg.uni_countries IS NULL OR cfg.uni_countries = co.uni_countries)"),
+            sql.SQL("(cfg.course_university IS NULL OR cfg.course_university = co.course_university)"),
+            sql.SQL("(cfg.uni_languages IS NULL OR cfg.uni_languages = co.uni_languages)"),
+            sql.SQL("(cfg.course_levels IS NULL OR cfg.course_levels = co.course_levels)"),
+            sql.SQL(
+                "(cfg.disciplinary_field IS NULL OR EXISTS (SELECT 1 FROM course_disciplinary_fields cdf "
+                "WHERE cdf.course_id = co.id AND cdf.disciplinary_field_id = cfg.disciplinary_field))"
+            ),
+            sql.SQL(
+                "(cfg.key_word IS NULL OR co.title ILIKE '%' || TRIM(cfg.key_word) || '%' "
+                "OR co.description ILIKE '%' || TRIM(cfg.key_word) || '%')"
+            ),
+            sql.SQL("(cfg.lastrevision IS NULL OR co.modified_date > cfg.lastrevision)"),
+        ]
+
+        query = sql.SQL(
+            "SELECT {columns} FROM chatconfigs AS cfg CROSS JOIN courses AS co"
+        ).format(columns=sql.SQL(", ").join(selectColumns))
+        for table, valueColumn, alias, joinColumn in CATALOG_JOINS_CO:
+            query = query + sql.SQL(" LEFT JOIN {table} ON {table}.id = {join}").format(
+                table=sql.Identifier(table),
+                join=sql.SQL(joinColumn),
+            )
+        query = query + sql.SQL(" WHERE cfg.is_subscribed = TRUE")
+        query = query + sql.SQL(" AND ") + sql.SQL(" AND ").join(conditions)
+        query = query + sql.SQL(" ORDER BY cfg.id, co.modified_date DESC NULLS LAST")
+
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+        coursesByChat: Dict[int, List[ShowCourseModel]] = {}
+        for row in rows:
+            chatId = row["chat_id"]
+            coursesByChat.setdefault(chatId, []).append(self._rowToShowCourseModel(row))
+
+        matches = [
+            ChatNewCourses(chatId=chatId, courses=courses)
+            for chatId, courses in coursesByChat.items()
+        ]
+        logging.info(
+            "PostgresDatabaseRepositoryImp: getNewCoursesForChats devolvió %d filas para %d chats",
+            len(rows),
+            len(matches),
+        )
+        return matches
 
     def _rowToShowCourseModel(self, row: dict) -> ShowCourseModel:
         return ShowCourseModel(
