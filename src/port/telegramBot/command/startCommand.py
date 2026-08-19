@@ -7,7 +7,7 @@ def register(bot):
     def handle_start(message):
         bot.reply_to(
             message,
-            "👋 Hola. Usa /suscribirse para activar las notificaciones, /desuscribirse para pausarlas o /ayuda para ver todos los comandos.",
+            "👋 ¡Bienvenido! Este bot te enviará notificaciones de nuevos cursos según tus filtros personalizados. Puedes usar /filtros para cambiarlos, /desuscribirse para dejar de recibir avisos y /ayuda para ver todos los comandos disponibles.",
         )
 
         SubscribeChatUseCase().execute(message.chat.id)
