@@ -21,7 +21,6 @@ from src.domain.repository.courseRepository import CourseFilters, CourseSourceRe
 from src.infraestructure.dto.emovies.emovieApiParamsDto import EmovieApiParamsDto
 from src.infraestructure.dto.emovies.emovieApiResponseDto import (
     EmovieApiCourseDto,
-    EmovieApiCoursesDto,
     EmovieApiDataDto,
     EmovieApiResponseDto,
 )
@@ -52,6 +51,7 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
     REQUEST_TIMEOUT_MS = 60_000
     CHALLENGE_TIMEOUT_MS = 60_000
     NO_FILTER_VALUE = "NaN"
+    DEFAULT_BROWSER_COUNT = 1
     BROWSER_UA = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -115,9 +115,25 @@ class EmoviesSourceRepositoryImp(CourseSourceRepository):
         courseDtos = self._filterByMinModifiedDate(list(coursesById.values()), filters.minModifiedDate)
         courseDtos = self._sortByDateDesc(courseDtos)
 
-        firstPageDataDto = pagesData[0]
-        mappedData = firstPageDataDto.model_copy(update={"courses": EmovieApiCoursesDto(posts=courseDtos)})
-        courseModels = emovieResponseToCourseModels(mappedData, None)
+        # Se mapea cada página con su propio courses_html: los tags de área,
+        # nivel e idioma quedan asociados a los cursos de esa misma página.
+        # Antes se usaba el HTML de la página 1 junto con la lista global
+        # reordenada, lo que dejaba sin áreas a casi todos los cursos y
+        # desalineaba los primeros por el match posicional.
+        modelsByCourseId: dict[int, CourseModel] = {}
+        for pageData in pagesData:
+            if pageData.courses is None or not (pageData.courses.posts or []):
+                continue
+            pageModels = emovieResponseToCourseModels(pageData, None)
+            for courseModel, courseDto in zip(pageModels, pageData.courses.posts or []):
+                if courseDto.ID is not None:
+                    modelsByCourseId[courseDto.ID] = courseModel
+
+        courseModels = [
+            modelsByCourseId[courseDto.ID]
+            for courseDto in courseDtos
+            if courseDto.ID in modelsByCourseId
+        ]
         courses: List[CourseModel] = []
 
         for courseModel in courseModels:
