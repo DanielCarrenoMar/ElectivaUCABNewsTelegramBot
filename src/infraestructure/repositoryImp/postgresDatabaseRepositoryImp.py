@@ -76,6 +76,8 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         logging.info("PostgresDatabaseRepositoryImp: se eliminaron todos los cursos de la tabla courses")
 
     def saveCourses(self, courseModels: List[CourseModel]) -> int:
+        totalCourses = len(courseModels)
+        logging.info("PostgresDatabaseRepositoryImp: convirtiendo dto a model para guardar %d cursos en la tabla courses", totalCourses)
         courses = [courseModelToCoursesDto(course) for course in courseModels]
         connection = get_db_connection()
 
@@ -91,8 +93,9 @@ class PostgresDatabaseRepositoryImp(DatabaseRepository):
         )
 
         with connection.cursor() as cursor:
-            for course in courses:
+            for i, course in enumerate(courses):
                 cursor.execute(insertQuery, self._courseToRow(course))
+                logging.info("PostgresDatabaseRepositoryImp: curso insertado en la tabla courses: %d / %s", i, totalCourses)
                 courseRow = cursor.fetchone()
                 if courseRow is None:
                     raise RuntimeError("No se pudo obtener el id del curso insertado")
