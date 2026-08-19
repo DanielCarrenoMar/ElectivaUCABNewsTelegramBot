@@ -82,6 +82,30 @@ APP_DISCIPLINARY_FIELDS = {
     "46": "Sociología",
     "47": "Deportes",
     "48": "Veterinaria y zootecnia",
+    "49": "Biología",
+    "50": "Ciencias exactas y naturales",
+    "51": "Enfermería",
+    "52": "Farmacia",
+    "53": "Geografía",
+    "54": "Geología",
+    "55": "Gestión empresarial",
+    "56": "Hotelería y turismo",
+    "57": "Ingeniería de Sistemas",
+    "58": "Ingeniería Eléctrica",
+    "59": "Ingeniería Industrial",
+    "60": "Ingeniería Mecánica",
+    "61": "Medicina",
+    "62": "Negocios Internacionales",
+    "63": "Otra Ciencia administrativa",
+    "64": "Otra Ciencia Biológica",
+    "65": "Otra Ciencia exacta o natural",
+    "66": "Otra Ingeniería",
+    "67": "Periodismo",
+    "68": "Química",
+    "69": "Religión y teología",
+    "70": "Salud infantil",
+    "71": "Terapia y rehabilitación",
+    "72": "Trabajo Social",
 }
 
 APP_UNIVERSITIES: dict[str, str] = {
@@ -287,5 +311,5 @@ APP_CATALOG_MAP: dict[str, dict[str, str]] = {
     "course_sources": APP_COURSE_SOURCES,
 }
 
-def catalogValues(catalog: str) -> list[str]:
-    return sorted(set(APP_CATALOG_MAP[catalog].values()))
+def catalogValues(catalog: str) -> list[tuple[int, str]]:
+    return sorted((int(catalog_id), value) for catalog_id, value in APP_CATALOG_MAP[catalog].items())
