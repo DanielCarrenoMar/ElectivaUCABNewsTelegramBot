@@ -32,10 +32,40 @@ _AUSJAL_TO_APP_COURSE_LEVELS = {
 
 _AUSJAL_TO_APP_DISCIPLINARY_FIELDS = {
     "administracion de empresas": 7,  # Administración de empresas
+    "administracion y contaduria": 12,  # Ciencias económico-administrativas
+    "administarcion y contaduria": 12,  # Typo present in AUSJAL data
+    "business": 12,  # Ciencias económico-administrativas
     "ciencias de la salud": 20,  # Ciencias de la salud
+    "ciencias economicas y empresariales": 12,  # Ciencias económico-administrativas
+    "ciencias economicas y sociales": 45,  # Ciencias sociales y Humanidades
     "derecho": 23,  # Derecho
+    "derecho y business": 12,  # Ciencias económico-administrativas
+    "doctorado en politica y gobierno": 45,  # Ciencias sociales y Humanidades
+    "doutorado em filosofia": 39,  # Filosofía y ética
     "educacion": 14,  # Educación
+    "empresas, negocios": 12,  # Ciencias económico-administrativas
+    "especializacion en gerencia de recursos humanos y relaciones industriales": 12,  # Ciencias económico-administrativas
+    "gerencia de recursos humanos y relaciones": 12,  # Ciencias económico-administrativas
+    "gerencia de recursos humanos y relaciones industriales": 12,  # Ciencias económico-administrativas
+    "humanidades y educacion": 45,  # Ciencias sociales y Humanidades
+    "ingenieria": 17,  # Ingenierías
+    "ingenieria ambiental": 17,  # Ingenierías
+    "ingenieria biomedica": 17,  # Ingenierías
+    "ingenieria civil": 8,  # Ingeniería Civil
+    "ingenieria informatica": 17,  # Ingenierías
+    "innovacion y emprendimiento": 12,  # Ciencias económico-administrativas
+    "letras": 24,  # Literatura
+    "maestria en direccion de empresas": 7,  # Administración de empresas
+    "maestria en sistemas de informacion": 17,  # Ingenierías
+    "mestrado em direito": 23,  # Derecho
+    "mestrado em filosofia": 39,  # Filosofía y ética
+    "negocios internacionales": 12,  # Ciencias económico-administrativas
+    "postgrado de sistemas de calidad": 17,  # Ingenierías
+    "publicidad": 26,  # Mercadotecnia y publicidad
     "psicologia": 43,  # Psicología
+    "salud": 20,  # Ciencias de la salud
+    "sistemas de informacion": 17,  # Ingenierías
+    "transversal": 44,  # Servicios
 }
 
 # Las universidades AUSJAL aún no existen en el catálogo de la app
