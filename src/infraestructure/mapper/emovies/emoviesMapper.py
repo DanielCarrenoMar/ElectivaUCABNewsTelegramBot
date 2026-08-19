@@ -5,8 +5,8 @@ from typing import Optional, Union
 from src.domain.model.courseModel import CourseModel
 from src.infraestructure.dto.emovies.emovieApiResponseDto import EmovieApiCourseDto, EmovieApiDataDto
 from src.infraestructure.dto.emovies.emovieswebScraperCourseDto import EmoviesWebScraperCourseDto
-from src.infraestructure.mapper.emovies.emoviesCatalogTranslator import emoviesIdCatalogToAppIdCatalog
 from src.infraestructure.mapper.emovies.emoviesHtmlTagTraductor import emoviesHtmlTagToAppIdCatalog
+from src.infraestructure.mapper.emovies.emoviesNameTraductor import emoviesNameToAppIdCatalog
 
 from bs4 import BeautifulSoup
 
@@ -44,11 +44,11 @@ def _courseModifiedDate(apiCourseDto: EmovieApiCourseDto) -> date:
 
     return max(parsedDates)
 
-def _extractHtmlData(html:str):
+def _extractHtmlData(html: str):
     soup = BeautifulSoup(html, "html.parser")
 
     cards = soup.find_all("div", class_="item--course")
-    
+
     cardsInfo = []
 
     for card in cards:
@@ -57,6 +57,7 @@ def _extractHtmlData(html:str):
         disciplinaryTags = []
         level = ""
         language = ""
+        university = ""
 
         for cardClass in cardClassz:
             if cardClass.startswith("course_disciplinary_new"):
@@ -66,7 +67,15 @@ def _extractHtmlData(html:str):
             elif cardClass.startswith("university_language"):
                 language = "-".join(cardClass.split("-")[1:])
 
-        cardsInfo.append((disciplinaryTags, level, language))
+        for item in card.find_all("div", class_="details__item"):
+            sup = item.find("sup", class_="light")
+            if sup and "IES / HEI" in sup.get_text():
+                strong = item.find("strong")
+                if strong:
+                    university = strong.get_text(strip=True)
+                    break
+
+        cardsInfo.append((disciplinaryTags, level, language, university))
 
     return cardsInfo
 
@@ -87,7 +96,7 @@ def emovieResponseToCourseModels(
         for course in apiDataDto.courses.posts
     ]
 
-    for i, (disciplinaryTags, level, language) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
+    for i, (disciplinaryTags, level, language, university) in enumerate(_extractHtmlData(apiDataDto.courses_html)):
         if i >= len(courseModels):
             break
         disciplinaryIds = [
@@ -103,6 +112,7 @@ def emovieResponseToCourseModels(
                 "disciplinaryFields": list(dict.fromkeys(disciplinaryIds)) or None,
                 "courseLevel": emoviesHtmlTagToAppIdCatalog("course_levels", level),
                 "language": emoviesHtmlTagToAppIdCatalog("languages", language),
+                "university": emoviesNameToAppIdCatalog("universities", university),
             }
         )
 
