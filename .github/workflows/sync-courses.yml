@@ -2,8 +2,8 @@ name: Sync Courses
 
 on:
   schedule:
-    # 00:00 GMT-4 = 04:00 UTC (GitHub Actions cron uses UTC)
-    - cron: "0 4 * * *"
+    # Cada 2 días a las 00:00 GMT-4 = 04:00 UTC (GitHub Actions cron uses UTC)
+    - cron: "0 4 */2 * *"
   workflow_dispatch:
 
 jobs:

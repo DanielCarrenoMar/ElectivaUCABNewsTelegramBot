@@ -2,8 +2,8 @@ name: Send Courses to Subscribers
 
 on:
   schedule:
-    # 09:00 GMT-4 = 13:00 UTC (GitHub Actions cron uses UTC)
-    - cron: "0 13 * * *"
+    # Cada 2 días a las 09:00 GMT-4 = 13:00 UTC (GitHub Actions cron uses UTC)
+    - cron: "0 13 */2 * *"
   workflow_dispatch:
 
 jobs:
