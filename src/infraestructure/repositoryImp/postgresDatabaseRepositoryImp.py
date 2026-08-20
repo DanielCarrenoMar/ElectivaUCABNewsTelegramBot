@@ -9,6 +9,7 @@ from src.domain.repository.databaseRepository import (
     DatabaseCourseFilters,
     DatabaseRepository,
 )
+from src.infraestructure.dto.database.courseDto import CoursesDto
 from src.domain.model.courseModel import ShowCourseModel
 from src.infraestructure.dbConnection import get_db_connection
 from src.domain.model.courseModel import CourseModel
