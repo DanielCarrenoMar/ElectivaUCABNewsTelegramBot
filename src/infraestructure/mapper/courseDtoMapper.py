@@ -11,6 +11,7 @@ def courseModelToCoursesDto(course: CourseModel) -> CoursesDto:
         disciplinary_fields=course.disciplinaryFields,
         course_university=course.university,
         uni_languages=course.language,
+        course_levels=course.courseLevel,
         start_class_date=course.startClassDate,
         end_class_date=course.endClassDate,
         start_inscription_date=course.startInscriptionDate,
