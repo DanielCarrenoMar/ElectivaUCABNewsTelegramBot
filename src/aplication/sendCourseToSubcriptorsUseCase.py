@@ -1,13 +1,14 @@
 import logging
 
-from src.domain.repository.notifierRepository import notifierRepository
+from src.domain.repository.notifierRepository import InvalidTelegramChatError, notifierRepository
 from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import PostgresDatabaseRepositoryImp
 
 
 class SendCourseToSubcriptorsUseCase:
-    def __init__(self, notifier: notifierRepository):
+    def __init__(self, notifier: notifierRepository, onInvalidChat=None):
         self._databaseRepository = PostgresDatabaseRepositoryImp()
         self._notifier = notifier
+        self._onInvalidChat = onInvalidChat
 
     def execute(self) -> int:
         totalSent = 0
@@ -42,6 +43,19 @@ class SendCourseToSubcriptorsUseCase:
                     sent,
                     courses[0].modifiedDate,
                 )
+            except InvalidTelegramChatError as error:
+                logging.warning(
+                    "SendCourseToSubcriptorsUseCase: chat inválido %s; se omitirá en futuros envíos",
+                    error.chat_id,
+                )
+                if self._onInvalidChat is not None:
+                    try:
+                        self._onInvalidChat(error)
+                    except Exception:
+                        logging.exception(
+                            "SendCourseToSubcriptorsUseCase: error desuscribiendo el chat %s",
+                            error.chat_id,
+                        )
             except Exception:
                 logging.exception("SendCourseToSubcriptorsUseCase: error procesando el chat %s", chat.id)
 

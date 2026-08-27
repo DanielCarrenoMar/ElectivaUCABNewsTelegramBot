@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from telebot import TeleBot
 
 from src.aplication.sendCourseToSubcriptorsUseCase import SendCourseToSubcriptorsUseCase
+from src.aplication.unsubscribeChatUseCase import UnsubscribeChatUseCase
 from src.infraestructure.repositoryImp.telegramNotifierRepositoryImp import TelegramNotifierRepositoryImp
 from src.port.task.task import log_task_duration
 
@@ -27,7 +28,11 @@ def sendCoursesToSubcriptorsTask():
 
     bot = TeleBot(token, parse_mode="HTML")
     notifier = TelegramNotifierRepositoryImp(bot)
-    sendCourseToAllUseCase = SendCourseToSubcriptorsUseCase(notifier)
+    unsubscribeChatUseCase = UnsubscribeChatUseCase()
+    sendCourseToAllUseCase = SendCourseToSubcriptorsUseCase(
+        notifier,
+        onInvalidChat=lambda error: unsubscribeChatUseCase.execute(error.chat_id),
+    )
 
     totalSent = sendCourseToAllUseCase.execute()
     logging.info("sendCoursesToSubcriptorsTask: total de cursos enviados %d", totalSent)
