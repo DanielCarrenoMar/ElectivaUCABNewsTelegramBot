@@ -26,10 +26,14 @@ CHANGELOG_MESSAGE = (
     "de clases, fechas de inscripci\u00F3n, descripci\u00F3n, horas de estudio, cupos "
     "disponibles y m\u00E1s detalles.\n"
     "\n"
-"<b>\U0001F30D Notificaciones de cursos AUSJAL</b>\n"
+    "<b>\U0001F30D Notificaciones de cursos AUSJAL</b>\n"
     "A partir de ahora tambi\u00E9n se notificar\u00E1n los cursos publicados en "
     "<a href=\"https://intercampusausjal.com/asignaturas-virtuales/\">AUSJAL</a>, "
     "adem\u00E1s de los de eMOVIES.\n"
+    "\n"
+    "<b>\U0001F680 Bot movido</b>\n"
+    "El bot se traslad\u00F3 a <a href=\"https://t.me/materiasInterNoticiasBot\">@materiasInterNoticiasBot</a>. "
+    "Por favor, sigue usando ese usuario para recibir avisos.\n"
 )
 
 
