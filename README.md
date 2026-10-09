@@ -7,14 +7,20 @@
 [![status: active](https://github.com/GIScience/badges/raw/master/status/active.svg)](https://github.com/GIScience/badges#active)
 ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)
 
-Bot de Telegram para monitorear cursos disponibles para internacionalización en los programas [eMOVIES](https://emovies.oui-iohe.org/en/page-our-courses/) y [Ausjal](https://intercampusausjal.com/asignaturas-virtuales/) notificando cuando aparece uno nuevo según filtros configurables por el usuario.
+Bot de Telegram que notifica los cursos de internacionalización que publica el catálogo
+[Electiva Internacional](https://emovies.oui-iohe.org/en/page-our-courses/), según los filtros
+configurados por cada chat.
+
+El bot **no recopila ni almacena los cursos**: el catálogo es propiedad de otro sistema y el bot
+solo lo lee. Cada base de datos externa publica sus propios cursos; cuando uno se publica o se
+actualiza, los chats suscritos que coinciden con sus filtros lo reciben.
 
 > 👀 [Prueba el bot](https://t.me/materiasInterNoticiasBot)
 
 ## Características ⭐
 - Guardado de configuración de filtro para cada usuario.
-- Notificación cada 48 horas de nuevos cursos según los filtros del usuario.
-- Obtención de cursos centralizada desde diferentes fuentes de información.
+- Notificación cada 48 horas de cursos nuevos o actualizados según los filtros del usuario.
+- Catálogos (países, idiomas, niveles, áreas) leídos del catálogo, sin catálogos duplicados.
 
 ## Comandos del bot
 
@@ -30,16 +36,28 @@ Bot de Telegram para monitorear cursos disponibles para internacionalización en
 
 - Python 3.11+
 - Api de Telegram
-- Playwright
-- PostgreSQL
+- PostgreSQL (dos conexiones: una propia y una de solo lectura al catálogo)
+
+## Bases de datos
+
+El bot habla con dos bases distintas:
+
+| Variable | Contenido | Acceso |
+|---|---|---|
+| `DB_URL` | Suscripciones y filtros de cada chat (`chatconfigs`). Única tabla propia. | lectura y escritura |
+| `COURSES_DB_URL` | Catálogo de cursos y sus catálogos, propiedad de otro sistema. | **solo lectura** |
+
+Los filtros de `chatconfigs` guardan la clave natural del catálogo (`countries.iso_code`,
+`languages.code`, `academic_levels.id`, `knowledge_areas.name`), no un id propio: no hay llave
+foránea posible entre bases distintas.
 
 ## Variables de entorno
 
 - `TELEGRAM_BOT_TOKEN`
-- `DB_URL`
+- `DB_URL` — suscripciones y filtros de chat
+- `COURSES_DB_URL` — catálogo de cursos (solo lectura)
 - `DB_CONNECTION_RETRY_DELAY_SECONDS`
 - `DB_CONNECTION_MAX_RETRIES`
-- `EMOVIES_PAGE_RETRIES` reintentos por página de la API de eMOVIES.
 
 ## Instrucciones para iniciar en local 
 
@@ -103,20 +121,11 @@ Con el entorno virtual activo, actualiza `pip`:
 python -m pip install --upgrade pip
 ```
 
-Para ejecutar el bot y las tareas generales:
+Para ejecutar el bot y las tareas programadas:
 
 ```bash
 pip install -r requirements.txt
 ```
-
-Para ejecutar la sincronización de cursos desde las fuentes de datos:
-
-```bash
-pip install -r requirements-scraper.txt
-playwright install --with-deps chromium
-```
-
-> El archivo correcto es `requirements-scraper.txt`. Este incluye las dependencias de `requirements.txt` y agrega Playwright.
 
 ## 4. Configurar las variables de entorno
 
@@ -138,7 +147,8 @@ Edita `.env` y completa al menos las siguientes variables:
 
 ```env
 TELEGRAM_BOT_TOKEN=TU_TOKEN_AQUI
-DB_URL=postgresql://usuario:contraseña@host:5432/nombre_base_de_datos
+DB_URL=postgresql://usuario:contraseña@host:5432/base_de_suscripciones
+COURSES_DB_URL=postgresql://usuario:contraseña@host:5432/base_del_catalogo
 ```
 
 No compartas ni subas el archivo `.env` al repositorio.
@@ -161,7 +171,7 @@ TELEGRAM_BOT_TOKEN=123456789:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 No publiques este token. Si se filtra, revócalo desde BotFather usando `/revoke` y genera uno nuevo.
 
-## 6. Crear las tablas y catálogos
+## 6. Crear la tabla de suscripciones
 
 Con el entorno virtual activo, ejecuta:
 
@@ -169,19 +179,21 @@ Con el entorno virtual activo, ejecuta:
 python -m scripts.seed
 ```
 
-Este comando crea las tablas necesarias, índices, catálogos y fuentes de cursos en PostgreSQL.
+Esto crea la única tabla propia del bot, `chatconfigs`. Los cursos y sus catálogos viven en la base
+del catálogo y el bot nunca los escribe.
 
-## 7. Sincronizar las fuentes de datos con la base de datos
-
-Para consultar e insertar los cursos de eMOVIES y AUSJAL en la base de datos:
+Si vienes de una versión anterior del bot, migra los filtros existentes a las claves naturales del
+catálogo con:
 
 ```bash
-python -m src.port.task.syncCoursesTask
+python -m scripts.migrate_chatconfigs_filters
 ```
 
-La variable `DB_URL` debe estar configurada correctamente antes de ejecutar este comando.
+El script es idempotente y reporta valor por valor cualquier filtro que no se pueda resolver. Un
+filtro no resoluble queda en `NULL`, es decir "cualquiera", así que ese chat recibirá más
+notificaciones, nunca menos.
 
-## 8. Ejecutar el bot de Telegram
+## 7. Ejecutar el bot de Telegram
 
 En otra terminal, activa nuevamente el entorno virtual y ejecuta:
 
@@ -191,7 +203,7 @@ python -m src.port.telegramBot.main
 
 El bot comenzará a escuchar mensajes de Telegram.
 
-## 9. Enviar cursos nuevos a los suscriptores
+## 8. Enviar cursos nuevos a los suscriptores
 
 Para ejecutar manualmente la tarea de notificaciones:
 
@@ -199,7 +211,11 @@ Para ejecutar manualmente la tarea de notificaciones:
 python -m src.port.task.sendCoursesToSubcriptorsTask
 ```
 
-## 10. Desactivar el entorno virtual
+La tarea envía a cada chat suscrito los cursos cuyo `updated_at` es posterior a la marca de agua
+del chat (`chatconfigs.lastrevision`), y luego adelanta esa marca. La fecha de publicación no la
+calcula el bot: es la que publica el catálogo.
+
+## 9. Desactivar el entorno virtual
 
 Cuando termines, ejecuta:
 

@@ -283,13 +283,20 @@ Route per task is recorded from the mandatory delegation triggers.
   Live rows restored byte-identically.
 - **Commit:** see Progress.
 
-### [ ] T8 — Documentation
+### [x] T8 — Documentation
 **Route:** direct inline (docs only).
-- `AGENTS.md`: replace the course DDL and catalog tables with the new read-only schema, the
-  two-connection setup, and the `updated_at` notification rule.
-- `README.md`, `intructure.md`: drop the scraper, the seed and the sync step; add
-  `COURSES_DB_URL`.
+- `AGENTS.md`: rewritten. The old version documented a `courses` table the bot no longer owns, a
+  five-catalog schema that no longer exists, a `courseRepository.py` that never existed, and
+  repositories under names the code never used. Now covers the two-database setup, the read-only
+  catalog schema, why the filters are natural keys, the `updated_at` notification rule, the
+  `updated_at`/`lastrevision` timezone trap, the country gap, and the four gotchas worth knowing.
+- `README.md`: dropped the scraper, `requirements-scraper.txt`, Playwright, `EMOVIES_PAGE_RETRIES`
+  and the whole sync step; added the two-database table, `COURSES_DB_URL`, and the migration script.
 - **Check:** every documented command and variable exists in the repository.
+- **Verified:** all five `python -m` module references in the README import successfully, and the
+  one workflow path exists. `requirements.txt` exists; the removed scraper requirements do not
+  appear in either document.
+- **Commit:** see Progress.
 
 ### [ ] T9 — Minimal test harness (recommended, pending approval)
 **Route:** delegated writer.
@@ -401,6 +408,7 @@ fully enumerable.
   64-byte `callback_data` limit that made 3 knowledge areas unselectable.
 - [x] **T7 — Remove the scraping pipeline.** Verified and committed. 27 files deleted; the send
   workflow now gets `COURSES_DB_URL`.
+- [x] **T8 — Documentation.** Verified and committed.
 
 ### Note for T6 (resolved)
 
