@@ -178,7 +178,7 @@ Route per task is recorded from the mandatory delegation triggers.
   dead code.
 - **Commit:** see Progress.
 
-### [ ] T4 — Course repository implementation and mapper
+### [x] T4 — Course repository implementation and mapper
 **Route:** delegated writer (2 non-trivial files, SQL-heavy).
 - New `src/infraestructure/repositoryImp/coursesRepositoryImp.py`:
   - Candidate query: `courses` joined to `campuses`, `universities`, `cities`, `countries`,
@@ -192,6 +192,13 @@ Route per task is recorded from the mandatory delegation triggers.
   `ShowCourseModel`, applying the table above.
 - **Check:** the queries run against the new database and the row mapping is asserted against a
   representative fixture row.
+- **Verified against live data:** 1409 courses updated after 2026-10-05, matching a plain SQL
+  count. All 1409 get knowledge areas from one batched query. **743 of the 1409 have no country
+  and still come back** — the LEFT JOINs on `cities`/`countries` work, and their messages omit
+  the country line instead of breaking. Catalogs return 249/190/5/6/73 entries, and every value
+  stored by the 12 live chats is present. Empty inputs return `[]` and `{}` without a query.
+- **No write path exists** in either new file; both queries are SELECT-only.
+- **Commit:** see Progress.
 
 ### [ ] T5 — Python filter matching and the updated_at watermark
 **Route:** delegated writer (3 non-trivial files, highest-risk task).
@@ -338,6 +345,7 @@ fully enumerable.
 - [x] **T2 — Domain contracts and models.** Verified and committed.
 - [x] **T3 — chatconfigs DDL and data migration.** Verified and committed. Zero filter losses.
   `chatconfigs_legacy` retained.
+- [x] **T4 — Course repository implementation and mapper.** Verified and committed.
 
 ### Open issue: first-run notification burst (needs a decision before T5 goes live)
 
