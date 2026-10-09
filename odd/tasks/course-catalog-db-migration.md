@@ -154,7 +154,7 @@ Route per task is recorded from the mandatory delegation triggers.
   `sendCourseToSubcriptorsUseCase.py`, `syncCoursesUseCase.py`, `filtersCommand.py`.
 - **Commit:** see Progress.
 
-### [ ] T3 — chatconfigs DDL and data migration
+### [x] T3 — chatconfigs DDL and data migration
 **Route:** delegated writer (script + seed).
 - `scripts/seed.py`: drop all course DDL and all catalog DDL; keep only the `chatconfigs`
   table with the new column types and `now()` default.
@@ -164,6 +164,19 @@ Route per task is recorded from the mandatory delegation triggers.
   in a per-value report.** Chats, subscriptions and resolvable filters are preserved.
 - **Check:** the script is idempotent and prints a per-value report of what resolved and what did
   not.
+- **Applied to the live database.** `chatconfigs` renamed to `chatconfigs_legacy`, new schema
+  created, 12 rows migrated, **`chatconfigs_legacy` retained as a safety net** and NOT dropped.
+  The old `courses` (2893 rows), `course_disciplinary_fields`, `courses_sources` and the five
+  catalog tables are untouched.
+- **Verified:** 12 rows in, 12 out; 7 subscribed preserved; no `lastrevision` or `is_subscribed`
+  differs from legacy; every surviving filter value resolves in the new database; the `CO` filter
+  matches 721 real courses. Idempotent: a second run skips with exit 0, a missing table exits 1
+  with a message and no traceback.
+- **Migration result: zero losses.** All 16 filter values in use resolved. The known `Brazil`
+  failure exists in the catalog but no chat used country id 4.
+- **Note:** `seed.py`'s unused `insert()` helper was removed after review rather than left as
+  dead code.
+- **Commit:** see Progress.
 
 ### [ ] T4 — Course repository implementation and mapper
 **Route:** delegated writer (2 non-trivial files, SQL-heavy).
@@ -322,3 +335,17 @@ fully enumerable.
 
 - [x] **T1 — Dual connection layer.** Verified and committed. `DB_URL` -> `electiveNotifier_db`
   (subscriptions and filters), `COURSES_DB_URL` -> `ElectivaInternacional` (read-only catalog).
+- [x] **T2 — Domain contracts and models.** Verified and committed.
+- [x] **T3 — chatconfigs DDL and data migration.** Verified and committed. Zero filter losses.
+  `chatconfigs_legacy` retained.
+
+### Open issue: first-run notification burst (needs a decision before T5 goes live)
+
+Our `courses` table holds 2893 rows with `modified_date` watermarks in Aug/Oct 2026. The external
+catalog holds 4167 rows whose `updated_at` maxes at 2026-10-07. The migrated `lastrevision`
+values are 2026-08-19 (5 chats) and 2026-10-06 (7 chats), so **every subscribed chat will treat
+the entire external catalog as new on the first run** and receive a very large burst.
+
+Options for T5: leave it (users get one large catch-up, then normal operation), or advance
+`lastrevision` to the catalog's max `updated_at` during deployment so only genuinely new courses
+notify. This must be decided before the pipeline goes live.
