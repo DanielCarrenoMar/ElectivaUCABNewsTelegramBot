@@ -298,23 +298,42 @@ Route per task is recorded from the mandatory delegation triggers.
   appear in either document.
 - **Commit:** see Progress.
 
-### [ ] T9 — Minimal test harness (recommended, pending approval)
+### [ ] T9 — Minimal test harness (RECOMMENDED, still unapproved)
 **Route:** delegated writer.
-- Add `pytest` and cover `courseRecordMapper` and the T5 matching function. Today the repository
-  has zero tests, and T5 replaces a SQL predicate with Python logic — the highest-risk change in
-  this feature has no safety net. Skipped unless the user approves the scope.
+- Add `pytest` and cover `courseRecordMapper` and `courseMatchesChat` / `nextWatermark`. The
+  repository has zero tests and T5 replaced a SQL predicate with Python logic — the highest-risk
+  change in this feature has no automated safety net. It was verified against a live SQL oracle
+  and by end-to-end idempotence instead, but neither runs in CI.
+- Skipped unless the user approves the scope.
 
 ## Acceptance criteria
 
-- No SQL anywhere references the old `courses`, `course_disciplinary_fields`,
+All verified on 2026-10-08 against the live databases.
+
+- [x] No SQL anywhere references the old `courses`, `course_disciplinary_fields`,
   `courses_sources`, `countries`, `universities`, `languages`, `course_levels` or
-  `disciplinary_fields` tables.
-- Notifications are driven only by `courses.updated_at > chatconfigs.lastrevision`.
-- `chatconfigs` holds natural keys from the new database, and every value in it resolves there.
-- The Telegram message keeps its current structure, with `updated_at` as the date line and no
+  `disciplinary_fields` tables of our own database. `chatconfigs` SQL lives in exactly one file.
+- [x] Notifications are driven only by `courses.updated_at > chatconfigs.lastrevision`.
+- [x] `chatconfigs` holds natural keys from the new database, and every value in it resolves there.
+- [x] The Telegram message keeps its current structure, with `updated_at` as the date line and no
   "Horas de estudio" line.
-- The bot performs no write against the new database.
-- `scripts/migrate_chatconfigs_filters.py` is idempotent and reports every unresolved value.
+- [x] The bot performs no write against the new database: zero write verbs in the courses
+  repository, mapper and contract, and the catalog is byte-for-byte unchanged (4167 courses, 0
+  updated during this work).
+- [x] `scripts/migrate_chatconfigs_filters.py` is idempotent and reports every unresolved value.
+- [x] Every module under `src/` imports cleanly (0 failures).
+- [x] The Python matcher agrees with an equivalent SQL query on all 7 subscribed chats.
+
+## Outstanding before going live
+
+1. **Advance the watermark at deploy time** (decision already taken). Set each subscribed chat's
+   `lastrevision` to the catalog's max `updated_at`, or the first run delivers 198 messages.
+2. **Drop `chatconfigs_legacy`** once the feature is verified in production. It is the only
+   remaining copy of the old integer filters.
+3. **Ask the catalog's owning system** for an index on `(is_active, updated_at)` and `pg_trgm`
+   GIN indexes on `title`/`description`. Neither exists, and the notification query filters and
+   orders by `updated_at` while the keyword filter does `ILIKE`.
+4. **T9 tests**, if approved.
 
 ## Delivery forecast
 
@@ -409,6 +428,9 @@ fully enumerable.
 - [x] **T7 — Remove the scraping pipeline.** Verified and committed. 27 files deleted; the send
   workflow now gets `COURSES_DB_URL`.
 - [x] **T8 — Documentation.** Verified and committed.
+
+All eight code tasks are complete. T9 (tests) remains unapproved, and the deploy-time steps above
+are still outstanding.
 
 ### Note for T6 (resolved)
 
