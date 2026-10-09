@@ -200,7 +200,7 @@ Route per task is recorded from the mandatory delegation triggers.
 - **No write path exists** in either new file; both queries are SELECT-only.
 - **Commit:** see Progress.
 
-### [ ] T5 — Python filter matching and the updated_at watermark
+### [x] T5 — Python filter matching and the updated_at watermark
 **Route:** delegated writer (3 non-trivial files, highest-risk task).
 - `src/aplication/sendCourseToSubcriptorsUseCase.py`: fetch subscribed chats, compute
   `min(lastrevision)`, fetch candidate courses newer than that, then match each chat in Python
@@ -214,6 +214,30 @@ Route per task is recorded from the mandatory delegation triggers.
 - `src/infraestructure/mapper/chatConfigMapper.py`: new columns and `datetime`.
 - **Check:** matching is exercised against a fixture set covering each filter dimension, the
   "filters match nothing" case, and the watermark advance.
+- **Verified against a SQL oracle, independently re-run:** with 51 candidates, the Python matcher
+  and an equivalent SQL query agree on **all 7 subscribed chats — 0 discrepancies**. Match
+  counts: 1, 51, 0, 0, 0, 0, 0.
+- **Country gap holds:** a `CO` filter matches 34 candidates, every one of them `CO`, all from
+  Bogotá. **0 of the 17 country-less candidates pass**, so half the catalog cannot leak past a
+  filter the user set.
+- **Watermark fix verified:** a chat whose filters match nothing still advances to the maximum
+  `updated_at`; a chat already ahead of the maximum does not move; with no candidates the current
+  value is kept. It never regresses.
+- **Idempotence verified end-to-end:** run 1 sends 52 messages, run 2 sends **0**. Live rows were
+  snapshotted and restored byte-identically afterwards — `chatconfigs` is back to 12 rows with
+  the original watermarks, so the deploy-time watermark advance remains outstanding.
+- **Bug found and fixed during verification:** `updateChatConfig` built its UPDATE from
+  `model_dump()`, which yields DTO field names (`last_revision`) rather than column names
+  (`lastrevision`). Every watermark write raised `KeyError`, and the use case's broad
+  `except Exception` swallowed it, so runs reported success while no watermark ever advanced.
+  The idempotence test caught it as "run 2 sent the same 52 messages". Now an explicit
+  column-to-value dict.
+- **Judgment calls:** a null `lastRevision` means "nothing new" and the chat is skipped (the old
+  SQL treated null as match-everything; the new column defaults to `now()`, so null only appears
+  if set explicitly). `_asUtc` is required, not defensive — `courses.updated_at` is
+  `timestamp without time zone` while `lastrevision` is `timestamptz`, and comparing them raw
+  raises `TypeError`. Both servers run GMT, but this assumes the owning system writes UTC.
+- **Commit:** see Progress.
 
 ### [ ] T6 — Filter UI reads catalogs from the new database
 **Route:** delegated writer (1 non-trivial file).
@@ -346,14 +370,26 @@ fully enumerable.
 - [x] **T3 — chatconfigs DDL and data migration.** Verified and committed. Zero filter losses.
   `chatconfigs_legacy` retained.
 - [x] **T4 — Course repository implementation and mapper.** Verified and committed.
+- [x] **T5 — Python filter matching and the updated_at watermark.** Verified and committed.
+  Python matcher agrees with SQL on all 7 chats, 0 discrepancies.
 
-### Open issue: first-run notification burst (needs a decision before T5 goes live)
+### Note for T6
 
-Our `courses` table holds 2893 rows with `modified_date` watermarks in Aug/Oct 2026. The external
-catalog holds 4167 rows whose `updated_at` maxes at 2026-10-07. The migrated `lastrevision`
-values are 2026-08-19 (5 chats) and 2026-10-06 (7 chats), so **every subscribed chat will treat
-the entire external catalog as new on the first run** and receive a very large burst.
+`UpdateUserFilterUseCase` now stores filter values as raw strings and normalizes blank input to
+`NULL`. `filtersCommand.py` still parses callback values as `int`; T6 must pass them through as
+strings or every filter selection will save as `NULL`.
 
-Options for T5: leave it (users get one large catch-up, then normal operation), or advance
-`lastrevision` to the catalog's max `updated_at` during deployment so only genuinely new courses
-notify. This must be decided before the pipeline goes live.
+### First-run notification burst: RESOLVED
+
+Measured on the live database before deciding: the burst is far smaller than the worst case,
+because `lastrevision` landed at 2026-10-06 and the catalog's newest `updated_at` is
+2026-10-07 13:19:13. Not 4167 courses — **198 messages with filters applied** across the 7
+subscribed chats (51 to the least-filtered chat, 18-20 to the filtered ones), or 357 unfiltered.
+
+**Decision: advance the watermark at deploy time.** A one-shot UPDATE sets each subscribed
+chat's `lastrevision` to the catalog's max `updated_at`, so the first real run only notifies
+courses published from then on. Nothing meaningful is lost: the catalog entries being skipped
+were already delivered to these subscribers through the old pipeline months ago.
+
+This is a deploy-time data step, not application code, so it does not belong in a task's
+acceptance criteria. It must be run before the send-courses workflow goes live.
