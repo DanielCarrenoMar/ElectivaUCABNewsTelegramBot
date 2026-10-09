@@ -1,16 +1,18 @@
-from datetime import date
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
 
 class ChatConfig(BaseModel):
+    # Los filtros guardan la clave natural del catálogo de cursos, no un id propio:
+    # no hay llave foránea entre bases de datos.
     id: int
     isSubscribed: bool = True
-    lastRevision: Optional[date] = None
-    uniCountries: Optional[int] = None          # FK countries.id
-    disciplinaryField: Optional[int] = None     # FK disciplinary_fields.id
-    courseUniversity: Optional[int] = None      # FK universities.id
-    uniLanguages: Optional[int] = None          # FK languages.id
-    courseLevels: Optional[int] = None          # FK course_levels.id
+    lastRevision: Optional[datetime] = None
+    countryIsoCode: Optional[str] = None       # countries.iso_code
+    disciplinaryField: Optional[str] = None    # knowledge_areas.name
+    courseUniversity: Optional[str] = None     # universities.name
+    courseLanguageCode: Optional[str] = None   # languages.code
+    courseLevelId: Optional[str] = None        # academic_levels.id
     keyWord: Optional[str] = None

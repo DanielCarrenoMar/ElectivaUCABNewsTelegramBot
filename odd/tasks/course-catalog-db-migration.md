@@ -127,8 +127,8 @@ Route per task is recorded from the mandatory delegation triggers.
   `electiveNotifier_db` and `COURSES_DB_URL` to `ElectivaInternacional`.
 - **Commit:** see Progress.
 
-### [ ] T2 — Domain contracts and models
-**Route:** delegated writer (6 non-trivial files).
+### [x] T2 — Domain contracts and models
+**Route:** delegated writer (4 files).
 - New `src/domain/repository/coursesRepository.py`: read-only `CoursesRepository` ABC with
   `getCoursesUpdatedAfter(moment: datetime) -> List[CourseRecordDto]`,
   `getKnowledgeAreasByCourseIds(ids) -> Dict[str, List[str]]`,
@@ -142,6 +142,17 @@ Route per task is recorded from the mandatory delegation triggers.
   chat-config methods; drop `deleteCoursesBySource`, `saveCourses`, `getCourses`,
   `DatabaseCourseFilters`, `ChatNewCourses`.
 - **Check:** no remaining import references the removed contract members.
+- **Verified:** domain layer imports cleanly; `buildMessage()` output is byte-identical to today's
+  except the "Horas de estudio" line is gone and the date line reads `updated_at`. A course with
+  no country (51% of the catalog) simply omits the country line. `CourseRecordDto` accepts only
+  `id` and `updatedAt`.
+- **Deliberate:** `CourseModel` (the scraper output model) was left untouched. Renaming it would
+  break five files that T7 deletes anyway, so the breakage surface stays limited to the file that
+  genuinely had to change.
+- **Known temporary breakage, fixed in T4/T5:** `postgresDatabaseRepositoryImp.py`,
+  `chatConfigMapper.py`, `chatConfigsDto.py`, `updateUserFilterUseCase.py`,
+  `sendCourseToSubcriptorsUseCase.py`, `syncCoursesUseCase.py`, `filtersCommand.py`.
+- **Commit:** see Progress.
 
 ### [ ] T3 — chatconfigs DDL and data migration
 **Route:** delegated writer (script + seed).

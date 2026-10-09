@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, field_validator, model_validator
@@ -27,6 +27,41 @@ class CourseModel(BaseModel):
     modifiedDate: date
 
 
+class CourseRecordDto(BaseModel):
+    """Fila plana de la tabla courses del catálogo, con sus catálogos ya resueltos."""
+
+    id: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    siteUrl: Optional[str] = None
+    modality: Optional[str] = None
+    credits: Optional[int] = None
+    enrollmentStart: Optional[date] = None
+    enrollmentEnd: Optional[date] = None
+    courseStart: Optional[date] = None
+    courseEnd: Optional[date] = None
+    totalSeats: Optional[int] = None
+    availableSeats: Optional[int] = None
+    updatedAt: datetime
+    campusName: Optional[str] = None
+    universityName: Optional[str] = None
+    cityName: Optional[str] = None
+    countryIsoCode: Optional[str] = None
+    countryName: Optional[str] = None
+    languageCode: Optional[str] = None
+    languageName: Optional[str] = None
+    academicLevelId: Optional[str] = None
+    academicLevelName: Optional[str] = None
+    sourceName: Optional[str] = None
+
+
+class CatalogEntry(BaseModel):
+    """Valor Natural-key de un catálogo y su etiqueta para mostrar en el teclado de filtros."""
+
+    value: str
+    label: str
+
+
 class ShowCourseModel(BaseModel):
     source: Optional[str] = None
     university: Optional[str] = None
@@ -41,9 +76,8 @@ class ShowCourseModel(BaseModel):
     startInscriptionDate: Optional[date] = None
     endInscriptionDate: Optional[date] = None
     description: Optional[str] = None
-    studyHours: Optional[int] = None
-    slots: Optional[int] = None
-    modifiedDate: Optional[date] = None
+    slots: Optional[int] = None       # courses.available_seats
+    updatedAt: Optional[datetime] = None
 
     classDateRange: Optional[str] = None
     inscriptionDateRange: Optional[str] = None
@@ -68,14 +102,7 @@ class ShowCourseModel(BaseModel):
             return None
         return value.strftime("%Y-%m-%d")
 
-    @field_validator("modifiedDate")
-    @classmethod
-    def _normalizeModifiedDate(cls, value: Optional[date]) -> Optional[date]:
-        if value is None or value == date.min:
-            return None
-        return value
-
-    @field_validator("studyHours", "slots")
+    @field_validator("slots")
     @classmethod
     def _formatNumber(cls, value: Optional[int]) -> Optional[str]:
         if value is None or value == 0:
@@ -111,14 +138,13 @@ class ShowCourseModel(BaseModel):
         lines = [
             f"<b><a href=\"{self.url}\">{self.title or _PENDING}</a></b>" if self.url else f"<b>{self.title or _PENDING}</b>",
             f"de {self.source}" if self.source else "",
-            f"  • 🕒 Fecha de modificación: {self.modifiedDate.strftime('%Y-%m-%d') if self.modifiedDate else ''}",
+            f"  • 🕒 Fecha de modificación: {self.updatedAt.strftime('%Y-%m-%d') if self.updatedAt else ''}",
             f"  • 🏛️ Universidad: {self.university}" if self.university else "",
             f"  • 🌍 País: {self.country}" if self.country else "",
             f"  • 🗣️ Idioma: {self.language}" if self.language else "",
             f"  • 🧠 Áreas: {', '.join(self.disciplinaryFields)}" if self.disciplinaryFields else "",
             f"  • 📅 Clases: {self.classDateRange}" if self.classDateRange else "",
             f"  • 📝 Inscripción: {self.inscriptionDateRange}" if self.inscriptionDateRange else "",
-            f"  • ⏱️ Horas de estudio: {self.studyHours}" if self.studyHours else "",
             f"  • 👥 Cupos: {self.slots}" if self.slots else "",
             "",
             self.description or "",
