@@ -239,13 +239,30 @@ Route per task is recorded from the mandatory delegation triggers.
   raises `TypeError`. Both servers run GMT, but this assumes the owning system writes UTC.
 - **Commit:** see Progress.
 
-### [ ] T6 — Filter UI reads catalogs from the new database
+### [x] T6 — Filter UI reads catalogs from the new database
 **Route:** delegated writer (1 non-trivial file).
 - `src/port/telegramBot/command/filtersCommand.py`: replace the
   `defaultValuesCatalog` imports with the new database catalogs; keep the four dimensions, the
   `filtro_valor:<key>:<value|none>` callback shape, and the `university` dimension absent from
   the menu as it is today.
 - **Check:** every offered value is a value that exists in the new database.
+- **Bug found and fixed here: Telegram's 64-byte `callback_data` limit.** Filter values are now
+  names instead of integer ids, and 3 of the 73 knowledge areas no longer fit:
+  `Agronomía y estudios de la tierra` (66 B), `Ciencias económico-administrativas` (67 B) and
+  `Otra Ciencia económico-administrativa` (70 B). Those three areas were literally unselectable.
+  **Fixed with index-based callbacks** — the button carries the catalog index and the real value
+  is resolved on press. Longest callback is now 36 B globally, and no label is truncated. Index
+  callbacks were chosen over truncating names because two distinct areas would otherwise render
+  identical text while filtering differently.
+- **Verified, independently re-run:** every one of the 333 value buttons resolves back to its
+  own label with no loss; max callback bytes 25/26/30/36 per dimension, 0 over the limit; the
+  three previously-broken areas render with full labels. An out-of-range or malformed index
+  answers with an alert instead of raising.
+- **A stale stored value is reported, not silently widened.** If a saved filter value is no
+  longer in the catalog, the summary shows `⚠️ No disponible (<value>)` instead of pretending it
+  means "Cualquiera" — a filter that widens itself quietly is worse than one the user knows is
+  stale.
+- **Commit:** see Progress.
 
 ### [ ] T7 — Remove the scraping pipeline
 **Route:** delegated writer (bulk deletion, mechanical).
@@ -372,12 +389,22 @@ fully enumerable.
 - [x] **T4 — Course repository implementation and mapper.** Verified and committed.
 - [x] **T5 — Python filter matching and the updated_at watermark.** Verified and committed.
   Python matcher agrees with SQL on all 7 chats, 0 discrepancies.
+- [x] **T6 — Filter UI reads catalogs from the new database.** Verified and committed. Fixed the
+  64-byte `callback_data` limit that made 3 knowledge areas unselectable.
 
-### Note for T6
+### Note for T6 (resolved)
 
-`UpdateUserFilterUseCase` now stores filter values as raw strings and normalizes blank input to
-`NULL`. `filtersCommand.py` still parses callback values as `int`; T6 must pass them through as
-strings or every filter selection will save as `NULL`.
+`UpdateUserFilterUseCase` stores filter values as raw strings and normalizes blank input to
+`NULL`. `filtersCommand.py` no longer parses callback values as `int`, so the trap that would
+have saved every filter as `NULL` is gone.
+
+### Known trade-off: index callbacks and catalog changes
+
+Telegram keeps a rendered keyboard alive, and the catalogs are ordered by name. If the owning
+system inserts or renames an entry between render and press, an index can shift and store a
+value different from the label the user saw. An out-of-range index is already contained (it alerts
+instead of crashing). Closing the window completely would require a fingerprint inside the
+callback, which costs bytes in an already-tight budget; not implemented.
 
 ### First-run notification burst: RESOLVED
 
