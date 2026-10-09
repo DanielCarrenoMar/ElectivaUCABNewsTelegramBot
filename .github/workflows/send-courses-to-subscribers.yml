@@ -24,5 +24,6 @@ jobs:
       - name: Run send courses task
         env:
           DB_URL: ${{ secrets.DB_URL }}
+          COURSES_DB_URL: ${{ secrets.COURSES_DB_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: python -m src.port.task.sendCoursesToSubcriptorsTask

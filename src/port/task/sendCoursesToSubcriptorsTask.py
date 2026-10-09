@@ -23,8 +23,11 @@ def sendCoursesToSubcriptorsTask():
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         raise RuntimeError("Falta variable de entorno TELEGRAM_BOT_TOKEN")
-    if not os.getenv("DB_URL"):
-        raise RuntimeError("Falta variable de entorno DB_URL")
+    # El bot lee de dos bases: DB_URL guarda las suscripciones y los filtros de cada
+    # chat, COURSES_DB_URL el catálogo de cursos que mantiene otro sistema.
+    for variable in ("DB_URL", "COURSES_DB_URL"):
+        if not os.getenv(variable):
+            raise RuntimeError(f"Falta variable de entorno {variable}")
 
     bot = TeleBot(token, parse_mode="HTML")
     notifier = TelegramNotifierRepositoryImp(bot)

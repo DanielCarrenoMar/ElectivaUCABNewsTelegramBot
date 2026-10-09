@@ -264,16 +264,24 @@ Route per task is recorded from the mandatory delegation triggers.
   stale.
 - **Commit:** see Progress.
 
-### [ ] T7 — Remove the scraping pipeline
-**Route:** delegated writer (bulk deletion, mechanical).
-- Delete: `emoviesSourceRepositoryImp.py`, `ausjalSourceRepositoryImp.py`,
-  `sourceRepository.py`, `syncCoursesUseCase.py`, `syncCoursesTask.py`, `mapper/emovies/**`,
-  `mapper/ausjal/**`, `dto/emovies/**`, `dto/ausjal/**`, `courseDtoMapper.py`,
-  `defaultValuesCatalog.py`, the six unused/newly-unused `dto/database/*` files,
-  `requirements-scraper.txt`, `.github/workflows/sync-courses.yml`, and the scratch captures
-  `ausjalHtmlCourse.txt`, `respuesta.json`.
-- **Check:** no dangling imports; `python -m src.port.task.sendCoursesToSubcriptorsTask` still
-  imports cleanly. Deletions are reversible through git if the user wants any file kept.
+### [x] T7 — Remove the scraping pipeline
+**Route:** direct inline (bulk deletion, mechanical, 27 files).
+- Deleted: both source repositories, `sourceRepository.py`, `syncCoursesUseCase.py`,
+  `syncCoursesTask.py`, `mapper/emovies/**`, `mapper/ausjal/**`, `dto/emovies/**`,
+  `dto/ausjal/**`, `courseDtoMapper.py`, `defaultValuesCatalog.py`, `courseDto.py`, the five
+  never-instantiated catalog DTOs, `requirements-scraper.txt`, `.github/workflows/sync-courses.yml`,
+  and the scratch captures `ausjalHtmlCourse.txt`, `respuesta.json`.
+- `CourseModel` (the scraper output model) deleted from the domain once nothing referenced it.
+- `EMOVIES_PAGE_RETRIES` removed from `.env.example`; the stale `EMOVIES_BROWSER_COUNT` removed from
+  the real `.env`.
+- The send workflow now receives `COURSES_DB_URL`, and `sendCoursesToSubcriptorsTask` validates
+  both database variables instead of only `DB_URL` — without this the workflow would have failed
+  at the first connection.
+- **Check:** a walk of every module under `src/` imports cleanly — **0 failures**, not just the
+  two entry points. `sendCoursesToSubcriptorsTask` and `telegramBot.main` both import.
+- **Verified end-to-end after deletion:** against live data, run 1 sends 52, run 2 sends 0.
+  Live rows restored byte-identically.
+- **Commit:** see Progress.
 
 ### [ ] T8 — Documentation
 **Route:** direct inline (docs only).
@@ -391,6 +399,8 @@ fully enumerable.
   Python matcher agrees with SQL on all 7 chats, 0 discrepancies.
 - [x] **T6 — Filter UI reads catalogs from the new database.** Verified and committed. Fixed the
   64-byte `callback_data` limit that made 3 knowledge areas unselectable.
+- [x] **T7 — Remove the scraping pipeline.** Verified and committed. 27 files deleted; the send
+  workflow now gets `COURSES_DB_URL`.
 
 ### Note for T6 (resolved)
 

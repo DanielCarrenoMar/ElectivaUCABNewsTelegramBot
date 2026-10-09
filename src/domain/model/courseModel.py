@@ -8,25 +8,6 @@ DESCRIPTION_MAX_LENGTH = 400
 _PENDING = "Por definir"
 
 
-class CourseModel(BaseModel):
-    sourceId: int = None
-    title: Optional[str] = None
-    courseLevel: Optional[int] = None
-    university: Optional[int] = None
-    url: str = None
-    country: Optional[int] = None
-    language: Optional[int] = None
-    disciplinaryFields: Optional[List[int]] = None
-    startClassDate: Optional[date] = None
-    endClassDate: Optional[date] = None
-    startInscriptionDate: Optional[date] = None
-    endInscriptionDate: Optional[date] = None
-    description: Optional[str] = None
-    studyHours: Optional[int] = None
-    slots: Optional[int] = None
-    modifiedDate: date
-
-
 class CourseRecordDto(BaseModel):
     """Fila plana de la tabla courses del catálogo, con sus catálogos ya resueltos."""
 
