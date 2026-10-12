@@ -185,14 +185,6 @@ del catálogo y el bot nunca los escribe.
 Si vienes de una versión anterior del bot, migra los filtros existentes a las claves naturales del
 catálogo con:
 
-```bash
-python -m scripts.migrate_chatconfigs_filters
-```
-
-El script es idempotente y reporta valor por valor cualquier filtro que no se pueda resolver. Un
-filtro no resoluble queda en `NULL`, es decir "cualquiera", así que ese chat recibirá más
-notificaciones, nunca menos.
-
 ## 7. Ejecutar el bot de Telegram
 
 En otra terminal, activa nuevamente el entorno virtual y ejecuta:
