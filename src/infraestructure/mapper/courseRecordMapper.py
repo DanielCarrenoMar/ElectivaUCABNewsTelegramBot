@@ -1,6 +1,19 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from src.domain.model.courseModel import CourseRecordDto, ShowCourseModel
+
+# El enlace del mensaje se arma con el id del curso: el destino que se comparte es
+# la ficha del curso en el sitio, y esa ruta es estable frente a cambios en la url
+# que traiga el catálogo de origen.
+COURSE_URL_BASE = "https://movilidadglobal.tech/cursos/"
+
+
+def courseUrl(courseId: Optional[str]) -> Optional[str]:
+    """Enlace publico de la ficha del curso, armado con su id."""
+    key = (courseId or "").strip()
+    if not key:
+        return None
+    return f"{COURSE_URL_BASE}{key}"
 
 
 def rowToCourseRecordDto(row: dict) -> CourseRecordDto:
@@ -14,7 +27,6 @@ def rowToCourseRecordDto(row: dict) -> CourseRecordDto:
         id=row.get("id"),
         title=row.get("title"),
         description=row.get("description"),
-        siteUrl=row.get("site_url"),
         modality=row.get("modality"),
         credits=row.get("credits"),
         enrollmentStart=row.get("enrollment_start"),
@@ -46,6 +58,9 @@ def courseRecordToShowCourseModel(
     universidad, del pais, del idioma y del nivel academico), asi que aqui solo
     se renombran los campos al idioma del mensaje. totalSeats, modality y credits
     se leen del catalogo pero no se muestran: el mensaje conserva la forma actual.
+
+    El enlace del mensaje sale de courseUrl(record.id): se apunta a la ficha del
+    curso en el sitio, no a una url del catálogo de origen.
     """
     return ShowCourseModel(
         source=record.sourceName,
@@ -55,7 +70,7 @@ def courseRecordToShowCourseModel(
         disciplinaryFields=list(knowledgeAreas) if knowledgeAreas else None,
         courseLevel=record.academicLevelName,
         title=record.title,
-        url=record.siteUrl,
+        url=courseUrl(record.id),
         startClassDate=record.courseStart,
         endClassDate=record.courseEnd,
         startInscriptionDate=record.enrollmentStart,

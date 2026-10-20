@@ -13,7 +13,8 @@ y notifica a los usuarios según filtros configurables por chat. Python 3.11+, a
 ElectivaUCABNewsTelegramBot/
 ├── scripts/
 │   ├── seed.py                        # Crea chatconfigs (única tabla propia)
-│   └── migrate_chatconfigs_filters.py # Convierte filtros INT a claves naturales (idempotente)
+│   ├── sendChangelogToUsers.py        # Envía el changelog a los chats suscritos
+│   └── previewTelegramMessages.py     # Imprime el mensaje de Telegram sin enviarlo (por día de lastrevision)
 ├── src/                               # Código fuente (arquitectura limpia por capas)
 │   ├── port/                          # Capa de entrada: bot de Telegram y tareas
 │   │   ├── telegramBot/
@@ -149,19 +150,14 @@ filtros no coincidían con nada nunca avanzaba y volvía a recorrer todo su hist
 `nextWatermark` nunca retrocede: si el máximo de candidatos es anterior a la marca actual, se
 conserva la actual.
 
-## Migración de datos
+## Mensaje que se envía
 
-`scripts/migrate_chatconfigs_filters.py` convierte los filtros de INT a claves naturales resolviendo
-cada valor contra el catálogo por nombre normalizado (NFKD, sin diacríticos, minúsculas, espacios
-colapsados). Los catálogos viejos se leen de la base propia; el mapeo de niveles es semántico
-(`1→doctorate`, `2→continuing_education`, `3→postgraduate`, `4→undergraduate`,
-`5→technical_technological`) porque ambos catálogos nombran distinto.
+El enlace del título se arma como `https://movilidadglobal.tech/cursos/<id del curso>` (`courseUrl`
+en `courseRecordMapper.py`); `courses.site_url` no se consulta ni se usa.
 
-Es **idempotente**: detecta si las columnas siguen siendo `integer` (no si sus nombres coinciden,
-porque `course_university` y `disciplinary_field` mantienen el nombre en ambos esquemas).
-
-Un valor que no resuelve queda en `NULL` y se reporta. El efecto aceptado es que ese filtro se abre
-a "cualquiera": el chat recibe más notificaciones, nunca menos.
+Para ver el mensaje exacto sin enviarlo: `python scripts/previewTelegramMessages.py 2026-10-01
+--plain --limit 5`. El argumento es el día de `lastrevision` que se simula y el script no aplica los
+filtros de ningún chat.
 
 ## Dependencias (requirements.txt)
 

@@ -14,7 +14,6 @@ class CourseRecordDto(BaseModel):
     id: str
     title: Optional[str] = None
     description: Optional[str] = None
-    siteUrl: Optional[str] = None
     modality: Optional[str] = None
     credits: Optional[int] = None
     enrollmentStart: Optional[date] = None

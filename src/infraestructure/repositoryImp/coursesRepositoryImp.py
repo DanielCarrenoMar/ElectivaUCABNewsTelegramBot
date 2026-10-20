@@ -16,7 +16,6 @@ COURSES_COLUMNS = [
     ("c", "id", "id"),
     ("c", "title", "title"),
     ("c", "description", "description"),
-    ("c", "site_url", "site_url"),
     ("c", "modality", "modality"),
     ("c", "credits", "credits"),
     ("c", "enrollment_start", "enrollment_start"),
