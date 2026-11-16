@@ -14,12 +14,12 @@ from src.infraestructure.repositoryImp.postgresDatabaseRepositoryImp import Post
 def _asUtc(moment: datetime) -> datetime:
     """Normaliza a UTC para poder comparar momentos que vienen de dos bases distintas.
 
-    courses.updated_at es `timestamp without time zone` y llega sin zona horaria,
+    courses.created_at es `timestamp without time zone` y llega sin zona horaria,
     mientras que chatconfigs.lastrevision es `timestamptz` y llega con ella. Las dos
     bases están en GMT, asi que leer el valor sin zona como UTC es laconversion
     correcta; sin esto la comparación de frescura lanza TypeError y ningun chat
     recibe nada. El mismo casteo cubre el caso de que el otro sistema pase a
-    escribir updated_at con zona.
+    escribir created_at con zona.
     """
     if moment.tzinfo is None:
         return moment.replace(tzinfo=timezone.utc)
@@ -38,7 +38,7 @@ def courseMatchesChat(
     ejercitar con fixtures sin base de datos.
 
     Reglas, en el mismo orden en que las evaluaba el SQL de antes:
-    - Frescura: updated_at tiene que ser estrictamente posterior a lastrevision.
+    - Frescura: created_at tiene que ser estrictamente posterior a lastrevision.
       Un chat sin lastrevision no tiene nada nuevo que recibir.
     - Un filtro ausente (None) significa "cualquiera".
     - El area disciplinaria coincide con CUALQUIERA de las areas del curso, igual que
@@ -48,9 +48,9 @@ def courseMatchesChat(
     - Un curso sin pais (51% del catalogo: su campus no tiene ciudad) NO puede
       satisfacer un filtro de pais. Resolverlo como "cualquiera" lo dejaria pasar.
     """
-    if chat.lastRevision is None or record.updatedAt is None:
+    if chat.lastRevision is None or record.createdAt is None:
         return False
-    if _asUtc(record.updatedAt) <= _asUtc(chat.lastRevision):
+    if _asUtc(record.createdAt) <= _asUtc(chat.lastRevision):
         return False
 
     if chat.countryIsoCode is not None and record.countryIsoCode != chat.countryIsoCode:
@@ -79,7 +79,7 @@ def courseMatchesChat(
 
 
 def nextWatermark(
-    current: Optional[datetime], maxUpdatedAt: Optional[datetime]
+    current: Optional[datetime], maxCreatedAt: Optional[datetime]
 ) -> Optional[datetime]:
     """Marca de agua siguiente: la del maximo de candidatos, y jamas retrocede.
 
@@ -87,11 +87,11 @@ def nextWatermark(
     actual. Asi una corrida con pocos candidatos, o un reloj de la otra base que se
     atrasa, nunca hace volver a recorrer el historial.
     """
-    if maxUpdatedAt is None:
+    if maxCreatedAt is None:
         return current
     if current is None:
-        return maxUpdatedAt
-    return maxUpdatedAt if maxUpdatedAt > current else current
+        return maxCreatedAt
+    return maxCreatedAt if maxCreatedAt > current else current
 
 
 class SendCourseToSubcriptorsUseCase:
@@ -128,9 +128,9 @@ class SendCourseToSubcriptorsUseCase:
         # Los candidatos se traen una sola vez para todos los chats: el predicado de
         # fecha baja a SQL y el resto de los filtros se evalua en Python.
         minRevision = min(_asUtc(chat.lastRevision) for chat in pendingChats)
-        candidates = self._coursesRepository.getCoursesUpdatedAfter(minRevision)
+        candidates = self._coursesRepository.getCoursesCreatedAfter(minRevision)
         logging.info(
-            "SendCourseToSubcriptorsUseCase: %d cursos actualizados después de %s",
+            "SendCourseToSubcriptorsUseCase: %d cursos creados después de %s",
             len(candidates),
             minRevision.isoformat(),
         )
@@ -145,7 +145,7 @@ class SendCourseToSubcriptorsUseCase:
         # coincidieron. Antes solo avanzaba con el curso coincidente mas nuevo, asi que
         # un chat cuyos filtros no coincidian con nada nunca avanzaba y volvia a
         # recorrer todo su historico en cada corrida.
-        maxUpdatedAt = max(_asUtc(record.updatedAt) for record in candidates)
+        maxCreatedAt = max(_asUtc(record.createdAt) for record in candidates)
 
         for chat in chatConfigs:
             if chat.lastRevision is None:
@@ -161,7 +161,7 @@ class SendCourseToSubcriptorsUseCase:
                 for record in matched:
                     self._notifier.sendCourseToChat(chat.id, self._toShowCourse(record, areasByCourse))
 
-                watermark = nextWatermark(_asUtc(chat.lastRevision), maxUpdatedAt)
+                watermark = nextWatermark(_asUtc(chat.lastRevision), maxCreatedAt)
                 if watermark != _asUtc(chat.lastRevision):
                     chat.lastRevision = watermark
                     self._databaseRepository.updateChatConfig(chat)

@@ -1,0 +1,9 @@
+{
+  "name": "commit",
+  "author": {
+    "name": "Miguel Ángel Durán (midudev)",
+    "url": "https://github.com/midudev"
+  },
+  "homepage": "https://github.com/midudev/better-claude",
+  "repository": "https://github.com/midudev/better-claude"
+}

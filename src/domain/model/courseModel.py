@@ -22,7 +22,7 @@ class CourseRecordDto(BaseModel):
     courseEnd: Optional[date] = None
     totalSeats: Optional[int] = None
     availableSeats: Optional[int] = None
-    updatedAt: datetime
+    createdAt: datetime
     campusName: Optional[str] = None
     universityName: Optional[str] = None
     cityName: Optional[str] = None
@@ -56,8 +56,8 @@ class ShowCourseModel(BaseModel):
     startInscriptionDate: Optional[date] = None
     endInscriptionDate: Optional[date] = None
     description: Optional[str] = None
-    slots: Optional[int] = None       # courses.available_seats
-    updatedAt: Optional[datetime] = None
+    credits: Optional[int] = None     # courses.credits
+    createdAt: Optional[datetime] = None
 
     classDateRange: Optional[str] = None
     inscriptionDateRange: Optional[str] = None
@@ -82,7 +82,7 @@ class ShowCourseModel(BaseModel):
             return None
         return value.strftime("%Y-%m-%d")
 
-    @field_validator("slots")
+    @field_validator("credits")
     @classmethod
     def _formatNumber(cls, value: Optional[int]) -> Optional[str]:
         if value is None or value == 0:
@@ -118,14 +118,14 @@ class ShowCourseModel(BaseModel):
         lines = [
             f"<b><a href=\"{self.url}\">{self.title or _PENDING}</a></b>" if self.url else f"<b>{self.title or _PENDING}</b>",
             f"de {self.source}" if self.source else "",
-            f"  • 🕒 Fecha de modificación: {self.updatedAt.strftime('%Y-%m-%d') if self.updatedAt else ''}",
+            f"  • 🕒 Fecha de creación: {self.createdAt.strftime('%Y-%m-%d') if self.createdAt else ''}",
             f"  • 🏛️ Universidad: {self.university}" if self.university else "",
             f"  • 🌍 País: {self.country}" if self.country else "",
             f"  • 🗣️ Idioma: {self.language}" if self.language else "",
             f"  • 🧠 Áreas: {', '.join(self.disciplinaryFields)}" if self.disciplinaryFields else "",
             f"  • 📅 Clases: {self.classDateRange}" if self.classDateRange else "",
             f"  • 📝 Inscripción: {self.inscriptionDateRange}" if self.inscriptionDateRange else "",
-            f"  • 👥 Cupos: {self.slots}" if self.slots else "",
+            f"  • 🎓 Unidades de crédito: {self.credits}" if self.credits else "",
             "",
             self.description or "",
         ]

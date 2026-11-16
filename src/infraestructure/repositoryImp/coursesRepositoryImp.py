@@ -24,7 +24,7 @@ COURSES_COLUMNS = [
     ("c", "course_end", "course_end"),
     ("c", "total_seats", "total_seats"),
     ("c", "available_seats", "available_seats"),
-    ("c", "updated_at", "updated_at"),
+    ("c", "created_at", "created_at"),
     ("ca", "name", "campus_name"),
     ("un", "name", "university_name"),
     ("ci", "name", "city_name"),
@@ -60,8 +60,8 @@ LEFT_JOINS = [
 COURSES_QUERY = sql.SQL(
     "SELECT {columns} FROM courses AS c "
     "{innerJoins} {leftJoins} "
-    "WHERE c.is_active = TRUE AND c.updated_at > %s "
-    "ORDER BY c.updated_at DESC"
+    "WHERE c.is_active = TRUE AND c.created_at > %s "
+    "ORDER BY c.created_at DESC"
 ).format(
     columns=sql.SQL(", ").join(
         sql.SQL("{table}.{column} AS {alias}").format(
@@ -104,14 +104,14 @@ KNOWLEDGE_AREAS_QUERY = sql.SQL(
 class CoursesRepositoryImp(CoursesRepository):
     """Lectura del catalogo de cursos. Esta base es de otro sistema: aqui nunca se escribe."""
 
-    def getCoursesUpdatedAfter(self, moment: datetime) -> List[CourseRecordDto]:
+    def getCoursesCreatedAfter(self, moment: datetime) -> List[CourseRecordDto]:
         connection = get_courses_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(COURSES_QUERY, (moment,))
             rows = cursor.fetchall()
 
         logging.info(
-            "CoursesRepositoryImp: getCoursesUpdatedAfter devolvió %d cursos actualizados después de %s",
+            "CoursesRepositoryImp: getCoursesCreatedAfter devolvió %d cursos creados después de %s",
             len(rows),
             moment,
         )

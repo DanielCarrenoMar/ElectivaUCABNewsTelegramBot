@@ -13,7 +13,7 @@ class ChatConfigsDto(BaseModel):
 
     id: Optional[int] = None
     is_subscribed: Optional[bool] = True
-    last_revision: Optional[datetime] = None    # courses.updated_at es timestamp
+    last_revision: Optional[datetime] = None    # courses.created_at es timestamp
     country_iso_code: Optional[str] = None      # countries.iso_code
     course_university: Optional[str] = None     # universities.name
     course_language_code: Optional[str] = None  # languages.code

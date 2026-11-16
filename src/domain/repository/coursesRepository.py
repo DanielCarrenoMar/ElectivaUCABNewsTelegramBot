@@ -9,8 +9,8 @@ class CoursesRepository(ABC):
     """Contrato de solo lectura sobre el catálogo de cursos (propiedad de otro sistema)."""
 
     @abstractmethod
-    def getCoursesUpdatedAfter(self, moment: datetime) -> List[CourseRecordDto]:
-        """Cursos activos con updated_at estrictamente posterior a moment, del más nuevo al más viejo."""
+    def getCoursesCreatedAfter(self, moment: datetime) -> List[CourseRecordDto]:
+        """Cursos activos con created_at estrictamente posterior a moment, del más nuevo al más viejo."""
         raise NotImplementedError
 
     @abstractmethod

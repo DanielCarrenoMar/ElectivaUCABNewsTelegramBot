@@ -35,7 +35,7 @@ def rowToCourseRecordDto(row: dict) -> CourseRecordDto:
         courseEnd=row.get("course_end"),
         totalSeats=row.get("total_seats"),
         availableSeats=row.get("available_seats"),
-        updatedAt=row.get("updated_at"),
+        createdAt=row.get("created_at"),
         campusName=row.get("campus_name"),
         universityName=row.get("university_name"),
         cityName=row.get("city_name"),
@@ -56,8 +56,8 @@ def courseRecordToShowCourseModel(
 
     Los catalogos ya vienen resueltos en el registro (nombre de la fuente, de la
     universidad, del pais, del idioma y del nivel academico), asi que aqui solo
-    se renombran los campos al idioma del mensaje. totalSeats, modality y credits
-    se leen del catalogo pero no se muestran: el mensaje conserva la forma actual.
+    se renombran los campos al idioma del mensaje. totalSeats, modality y availableSeats
+    se leen del catalogo pero no se muestran.
 
     El enlace del mensaje sale de courseUrl(record.id): se apunta a la ficha del
     curso en el sitio, no a una url del catálogo de origen.
@@ -76,8 +76,8 @@ def courseRecordToShowCourseModel(
         startInscriptionDate=record.enrollmentStart,
         endInscriptionDate=record.enrollmentEnd,
         description=record.description,
-        slots=record.availableSeats,
-        updatedAt=record.updatedAt,
+        credits=record.credits,
+        createdAt=record.createdAt,
     )
 
 

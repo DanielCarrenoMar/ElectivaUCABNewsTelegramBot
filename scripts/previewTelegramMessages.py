@@ -5,8 +5,8 @@ mismo camino que el envío real (`courseRecordToShowCourseModel` y
 `ShowCourseModel.buildMessage`), así que el HTML que se imprime es exactamente el
 que se manda por Telegram.
 
-La fecha que recibe es el día de la última actualización de un chat: se muestran
-los cursos con `courses.updated_at` estrictamente posterior a ese día a las 00:00
+La fecha que recibe es el día de la última revisión de un chat: se muestran
+los cursos con `courses.created_at` estrictamente posterior a ese día a las 00:00
 (GMT), la misma comparación que hace `chatconfigs.lastrevision`. Igual que el
 envío real, el script no aplica los filtros de ningún chat.
 
@@ -77,10 +77,10 @@ def previewTelegramMessages(since: datetime, plain: bool, limit: int) -> int:
         raise RuntimeError("Falta variable de entorno COURSES_DB_URL")
 
     coursesRepository = CoursesRepositoryImp()
-    records = coursesRepository.getCoursesUpdatedAfter(since)
+    records = coursesRepository.getCoursesCreatedAfter(since)
     print(
         f"Simulando un chat con lastrevision = {since.isoformat(sep=' ')} GMT: "
-        f"{len(records)} curso(s) actualizado(s) después de esa fecha"
+        f"{len(records)} curso(s) creado(s) después de esa fecha"
     )
     if not records:
         return 0
@@ -98,7 +98,7 @@ def previewTelegramMessages(since: datetime, plain: bool, limit: int) -> int:
     for position, record in enumerate(shown, start=1):
         course = courseRecordToShowCourseModel(record, areasByCourse.get(record.id, []))
         print(SEPARATOR)
-        print(f"Curso {position}/{len(shown)} — id {record.id} — actualizado {record.updatedAt}")
+        print(f"Curso {position}/{len(shown)} — id {record.id} — creado {record.createdAt}")
         print(SEPARATOR)
         print(renderMessage(course, plain))
 
